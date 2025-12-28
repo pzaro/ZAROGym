@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Tracker - Panos Z.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .timer-btn { transition: all 0.2s; }
+        .timer-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-20">
+        
+        <div class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md">
+            <h1 class="text-xl font-bold text-center">Πρόγραμμα Προπόνησης</h1>
+            <p class="text-xs text-center opacity-80">Fitness Excellence</p>
+        </div>
+
+        <div class="flex overflow-x-auto p-2 bg-blue-700 gap-2 sticky top-16 z-40 no-scrollbar">
+            <button v-for="(day, index) in days" :key="index" 
+                @click="currentDayIndex = index"
+                :class="['px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold', 
+                currentDayIndex === index ? 'bg-white text-blue-700' : 'bg-blue-800 text-blue-200']">
+                {{ day.title }}
+            </button>
+        </div>
+
+        <div class="p-4 space-y-4">
+            <div class="flex justify-between items-center bg-gray-100 p-2 rounded">
+                <span class="text-sm font-semibold text-gray-600">Σύνολο Θερμίδων Ημέρας:</span>
+                <span class="text-blue-600 font-bold">~{{ calculateTotalCalories }} kcal</span>
+            </div>
+
+            <div v-for="(exercise, index) in currentDayExercises" :key="index" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-100 flex justify-between items-start">
+                    <div>
+                        <span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-800 mb-2 inline-block">
+                            {{ exercise.muscle }}
+                        </span>
+                        <h3 class="font-bold text-gray-800 text-lg">{{ exercise.name }}</h3>
+                        <p class="text-gray-500 text-sm mt-1">
+                            <i class="fas fa-dumbbell mr-1"></i> {{ exercise.sets }} Σετ x {{ exercise.reps }}
+                            <span class="text-orange-500 ml-2 font-semibold">
+                                (~{{ exercise.calories }} kcal)
+                            </span>
+                        </p>
+                        <p v-if="exercise.notes" class="text-xs text-gray-400 mt-1 italic">{{ exercise.notes }}</p>
+                    </div>
+                    <a :href="'https://www.youtube.com/results?search_query=' + exercise.searchQuery" target="_blank" class="text-red-600 hover:text-red-700">
+                        <i class="fab fa-youtube text-2xl"></i>
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-2 gap-0">
+                    <button @click="startTimer(40, 'Διάλειμμα Σετ')" class="p-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium text-sm border-r border-gray-200 timer-btn">
+                        <i class="fas fa-stopwatch mr-1"></i> 40" Σετ
+                    </button>
+                    <button @click="startTimer(90, 'Αλλαγή Άσκησης')" class="p-3 bg-green-50 hover:bg-green-100 text-green-700 font-medium text-sm timer-btn">
+                        <i class="fas fa-walking mr-1"></i> 90" Αλλαγή
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-8 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                <h3 class="font-bold text-purple-800 mb-2"><i class="fas fa-child mr-2"></i>Διατάσεις</h3>
+                <p class="text-gray-700">{{ days[currentDayIndex].stretching }}</p>
+                <div class="mt-3">
+                     <button @click="startTimer(15, 'Διάταση')" class="w-full py-2 bg-purple-200 text-purple-800 rounded font-semibold text-sm">
+                        Χρονόμετρο Διάτασης (15")
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="timerActive" class="fixed inset-0 bg-black bg-opacity-90 z-[60] flex flex-col items-center justify-center text-white">
+            <div class="text-2xl font-light mb-4">{{ timerLabel }}</div>
+            <div class="text-8xl font-bold font-mono mb-8">{{ timeLeft }}</div>
+            <div class="flex gap-4">
+                <button @click="addTime(10)" class="px-6 py-2 bg-gray-700 rounded-full">+10s</button>
+                <button @click="stopTimer" class="px-8 py-3 bg-red-600 rounded-full font-bold text-lg">STOP</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    currentDayIndex: 0,
+                    timerActive: false,
+                    timeLeft: 0,
+                    timerLabel: '',
+                    intervalId: null,
+                    audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
+                    days: [
+                        {
+                            title: 'Ημέρα 1: Στήθος/Δικέφαλοι',
+                            stretching: 'Διατάσεις Στήθους & Δικεφάλων (1 σετ, 15")',
+                            exercises: [
+                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Τρέξιμο', sets: 1, reps: "10'-20'", calories: 100, searchQuery: 'treadmill warmup', notes: 'Διάδρομος' },
+                                { muscle: 'Στήθος', name: 'Πιέσεις Στήθους (Αλτήρες)', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Dumbbell Chest Press' },
+                                { muscle: 'Στήθος', name: 'Pec Deck ή Crossover', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Pec Deck Machine' },
+                                { muscle: 'Στήθος', name: 'Πιέσεις σε Επικλινή (Αλτήρες)', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Incline Dumbbell Press' },
+                                { muscle: 'Στήθος', name: 'Βυθίσεις (Machine)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Dip Machine Chest' },
+                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις με Ίσια Μπάρα', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Barbell Curl' },
+                                { muscle: 'Δικέφαλοι', name: 'Σφυριά (Αλτήρες)', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Hammer Curls' },
+                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις με μια λαβή', sets: 3, reps: '10-12', calories: 25, searchQuery: 'Single Arm Cable Curl' },
+                                { muscle: 'Core', name: 'Σανίδα', sets: 1, reps: "30''", calories: 15, searchQuery: 'Plank' },
+                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα (Machine)', sets: 3, reps: '15', calories: 25, searchQuery: 'Ab Machine Crunch' },
+                                { muscle: 'Αερόβιο', name: 'Περπάτημα (Διάδρομος)', sets: 1, reps: "30'", calories: 150, searchQuery: 'Treadmill walking' }
+                            ]
+                        },
+                        {
+                            title: 'Ημέρα 2: Πλάτη/Τρικέφαλοι',
+                            stretching: 'Διατάσεις Πλάτης & Τρικεφάλων (1 σετ, 15")',
+                            exercises: [
+                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'-20'", calories: 80, searchQuery: 'treadmill warmup' },
+                                { muscle: 'Πλάτη', name: 'Έλξεις με Υποβοήθηση', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Assisted Pull Up Machine' },
+                                { muscle: 'Πλάτη', name: 'Seated Row Ανοιχτή', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Wide Grip Seated Row' },
+                                { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλία', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Seated Cable Row' },
+                                { muscle: 'Τρικέφαλοι', name: 'Πιέσεις με Σχοινί', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Tricep Rope Pushdown' },
+                                { muscle: 'Τρικέφαλοι', name: 'Overhead Extension', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Overhead Extension' },
+                                { muscle: 'Τρικέφαλοι', name: 'Βυθίσεις (Machine)', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Tricep Dip Machine' },
+                                { muscle: 'Κοιλιακοί', name: 'Πλάγιοι Κοιλιακοί', sets: 3, reps: '15', calories: 25, searchQuery: 'Oblique Crunches' },
+                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι στο Στρώμα', sets: 3, reps: '15', calories: 20, searchQuery: 'Superman exercise' },
+                                { muscle: 'Αερόβιο', name: 'Περπάτημα (Διάδρομος)', sets: 1, reps: "30'", calories: 150, searchQuery: 'Treadmill walking' }
+                            ]
+                        },
+                        {
+                            title: 'Ημέρα 3: Πόδια/Ώμοι',
+                            stretching: 'Διατάσεις Ποδιών & Ώμων (1 σετ, 15")',
+                            exercises: [
+                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'-20'", calories: 80, searchQuery: 'treadmill warmup' },
+                                { muscle: 'Πόδια', name: 'Leg Press', sets: 3, reps: '10-12', calories: 60, searchQuery: 'Leg Press' },
+                                { muscle: 'Πόδια', name: 'Leg Extension', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Leg Extension' },
+                                { muscle: 'Πόδια', name: 'Seated Leg Curl', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Seated Leg Curl' },
+                                { muscle: 'Πόδια', name: 'Προσαγωγοί - Απαγωγοί', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Hip Adduction Machine' },
+                                { muscle: 'Γάμπες', name: 'Seated Calf Raises', sets: 3, reps: '10-12', calories: 25, searchQuery: 'Seated Calf Raise' },
+                                { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Αλτήρες)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Dumbbell Shoulder Press' },
+                                { muscle: 'Ώμοι', name: 'Εκτάσεις Πλάγιες', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Lateral Raise' },
+                                { muscle: 'Ώμοι', name: 'Εκτάσεις Εμπρόσθιες', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Front Raise' },
+                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα', sets: 3, reps: '15', calories: 25, searchQuery: 'Crunches' },
+                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι (Mat)', sets: 4, reps: '15', calories: 25, searchQuery: 'Back Extensions Floor' },
+                                { muscle: 'Αερόβιο', name: 'Περπάτημα (Διάδρομος)', sets: 1, reps: "30'", calories: 150, searchQuery: 'Treadmill walking' }
+                            ]
+                        },
+                        {
+                            title: 'Ημέρα 4: Στήθος/Τρικέφαλοι (B)',
+                            stretching: 'Διατάσεις (Γενικές)',
+                            exercises: [
+                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'-20'", calories: 80, searchQuery: 'treadmill warmup' },
+                                { muscle: 'Στήθος', name: 'Πιέσεις Στήθους (Machine)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Chest Press Machine' },
+                                { muscle: 'Στήθος', name: 'Εκτάσεις Επικλινή', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Incline Dumbbell Flyes' },
+                                { muscle: 'Στήθος', name: 'Incline Press (Machine)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Incline Chest Press Machine' },
+                                { muscle: 'Στήθος', name: 'Pec Deck', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Pec Deck' },
+                                { muscle: 'Τρικέφαλοι', name: 'Εκτάσεις με ένα χέρι', sets: 3, reps: '10-12', calories: 25, searchQuery: 'Single Arm Tricep Extension' },
+                                { muscle: 'Τρικέφαλοι', name: 'Πιέσεις με ίσια λαβή', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Straight Bar Tricep Pushdown' },
+                                { muscle: 'Τρικέφαλοι', name: 'Γαλλικές Πιέσεις', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Skullcrushers' },
+                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα', sets: 6, reps: '12-15', calories: 50, searchQuery: 'Crunches', notes: '2 Ασκήσεις x 3 σετ' },
+                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι (Bull)', sets: 4, reps: '12-15', calories: 30, searchQuery: 'Back Extension Bench' }
+                            ]
+                        },
+                        {
+                            title: 'Ημέρα 5: Πλάτη/Δικέφαλοι (B)',
+                            stretching: 'Διατάσεις (Γενικές)',
+                            exercises: [
+                                { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Lat Pulldown' },
+                                { muscle: 'Πλάτη', name: 'Low Row (Τροχαλία)', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Low Cable Row' },
+                                { muscle: 'Πλάτη', name: 'Seated Row (Ένα-Ένα)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Single Arm Machine Row' },
+                                { muscle: 'Πλάτη', name: 'Seated Row Ανοιχτή', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Wide Grip Seated Row' },
+                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις (Αλτήρες)', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Curls' },
+                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις Αυτοσυγκέντρωσης', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Concentration Curls' },
+                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις (Στραβομπάρα)', sets: 3, reps: '10-12', calories: 35, searchQuery: 'EZ Bar Curl' },
+                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα', sets: 3, reps: '12-15', calories: 25, searchQuery: 'Crunches' },
+                                { muscle: 'Core', name: 'Σανίδα', sets: 2, reps: "30''", calories: 20, searchQuery: 'Plank' },
+                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι Στρώμα', sets: 3, reps: '12-15', calories: 20, searchQuery: 'Superman exercise' }
+                            ]
+                        }
+                    ]
+                }
+            },
+            computed: {
+                currentDayExercises() {
+                    return this.days[this.currentDayIndex].exercises;
+                },
+                calculateTotalCalories() {
+                    return this.currentDayExercises.reduce((acc, curr) => acc + curr.calories, 0);
+                }
+            },
+            methods: {
+                startTimer(seconds, label) {
+                    this.timerLabel = label;
+                    this.timeLeft = seconds;
+                    this.timerActive = true;
+                    
+                    if (this.intervalId) clearInterval(this.intervalId);
+                    
+                    this.intervalId = setInterval(() => {
+                        this.timeLeft--;
+                        if (this.timeLeft <= 0) {
+                            this.playBeep();
+                            this.stopTimer();
+                        }
+                    }, 1000);
+                },
+                addTime(seconds) {
+                    this.timeLeft += seconds;
+                },
+                stopTimer() {
+                    clearInterval(this.intervalId);
+                    this.timerActive = false;
+                },
+                playBeep() {
+                    this.audio.play().catch(e => console.log('Audio require interaction'));
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
