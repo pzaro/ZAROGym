@@ -2,18 +2,24 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Workout Tracker - Panos Z.</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIldvcmtvdXQgVHJhY2tlciIsCiAgInNob3J0X25hbWUiOiAiV29ya291dCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29xvciI6ICIjMjU2M2ViIgp9">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .timer-btn { transition: all 0.2s; }
         .timer-btn:active { transform: scale(0.95); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
@@ -101,23 +107,39 @@
         </div>
 
         <div v-if="musicModalOpen" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" @click.self="musicModalOpen = false">
-            <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl transform transition-all">
-                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center text-white">
+            <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl transform transition-all h-[80vh] flex flex-col">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center text-white shrink-0">
                     <h3 class="font-bold text-lg"><i class="fas fa-headphones-alt mr-2"></i>Επιλογή Ήχου</h3>
                     <button @click="musicModalOpen = false" class="text-white hover:text-gray-200">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
                 
-                <div class="p-4 max-h-[70vh] overflow-y-auto">
+                <div class="p-4 overflow-y-auto flex-1">
                     <div class="mb-6">
                         <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Podcasts 🎙️</h4>
                         <div class="space-y-2">
+                            <a href="https://podlist.gr/podcasts?category=politics&order_by=created_at" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-purple-50 border border-gray-100 transition-colors group">
+                                <div class="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold mr-3 group-hover:scale-110 transition-transform">P</div>
+                                <div>
+                                    <div class="font-bold text-gray-800">Podlist.gr</div>
+                                    <div class="text-xs text-gray-500">Πολιτική & News</div>
+                                </div>
+                                <i class="fas fa-external-link-alt ml-auto text-gray-400"></i>
+                            </a>
+                            <a href="https://www.kathimerini.gr/visual/podcasts/" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-purple-50 border border-gray-100 transition-colors group">
+                                <div class="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold mr-3 group-hover:scale-110 transition-transform">K</div>
+                                <div>
+                                    <div class="font-bold text-gray-800">Καθημερινή</div>
+                                    <div class="text-xs text-gray-500">Visual Podcasts</div>
+                                </div>
+                                <i class="fas fa-external-link-alt ml-auto text-gray-400"></i>
+                            </a>
                             <a href="https://music.youtube.com/playlist?list=PLQRCbhtLyPgAZ6ZjwHcBOuzZs2u2dlKXV" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-purple-50 border border-gray-100 transition-colors group">
                                 <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold mr-3 group-hover:scale-110 transition-transform">L</div>
                                 <div>
                                     <div class="font-bold text-gray-800">LIFO Podcast</div>
-                                    <div class="text-xs text-gray-500">Συνεντεύξεις & Θέματα</div>
+                                    <div class="text-xs text-gray-500">Συνεντεύξεις</div>
                                 </div>
                                 <i class="fas fa-external-link-alt ml-auto text-gray-400"></i>
                             </a>
@@ -158,9 +180,6 @@
                             </a>
                         </div>
                     </div>
-                </div>
-                <div class="p-3 bg-gray-50 text-center text-xs text-gray-400 border-t">
-                    Opens in YouTube Music / New Tab
                 </div>
             </div>
         </div>
