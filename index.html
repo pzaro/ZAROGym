@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Workout Tracker - Panos Z.</title>
+    <title>Workout Tracker Pro</title>
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,28 +20,65 @@
         .timer-btn:active { transform: scale(0.95); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
+        
+        /* Custom Checkbox */
+        .custom-checkbox {
+            appearance: none;
+            background-color: #fff;
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 1.5em;
+            height: 1.5em;
+            border: 2px solid #cbd5e1;
+            border-radius: 0.35em;
+            display: grid;
+            place-content: center;
+            transition: all 0.2s;
+        }
+        .custom-checkbox::before {
+            content: "";
+            width: 0.8em;
+            height: 0.8em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em white;
+            transform-origin: center;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+        .custom-checkbox:checked {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+        .custom-checkbox:checked::before {
+            transform: scale(1);
+        }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-20">
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-24">
         
-        <div class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold">Πρόγραμμα Προπόνησης</h1>
-                <p class="text-xs opacity-80">Fitness Excellence</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <button @click="musicModalOpen = true" class="w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-400 flex items-center justify-center transition-colors shadow-lg">
-                    <i class="fas fa-music text-white"></i>
+        <div class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md">
+            <div class="flex justify-between items-center mb-2">
+                <button @click="settingsOpen = !settingsOpen" class="text-white hover:text-blue-200">
+                    <i class="fas fa-cog text-xl"></i>
                 </button>
-                <div class="text-right">
-                    <div class="text-xs font-light opacity-80">ΣΗΜΕΡΑ</div>
-                    <div class="font-bold text-lg">{{ todayName }}</div>
+                <div class="text-center">
+                    <div class="text-xs opacity-80 uppercase tracking-widest">ΚΑΜΕΝΕΣ ΘΕΡΜΙΔΕΣ</div>
+                    <div class="font-bold text-2xl leading-none">{{ totalBurnedSoFar.toFixed(0) }} <span class="text-sm font-normal">kcal</span></div>
                 </div>
+                <button @click="musicModalOpen = true" class="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-music text-white text-sm"></i>
+                </button>
+            </div>
+            
+            <div v-if="settingsOpen" class="bg-blue-700 rounded-lg p-3 mb-2 animate-fade-in text-sm flex justify-between items-center">
+                <span>Το βάρος σου (kg):</span>
+                <input type="number" v-model="userWeight" @change="saveWeight" class="w-16 p-1 rounded text-gray-800 text-center font-bold" placeholder="kg">
             </div>
         </div>
 
-        <div class="flex overflow-x-auto p-2 bg-blue-700 gap-2 sticky top-20 z-40 no-scrollbar shadow-lg">
+        <div class="flex overflow-x-auto p-2 bg-blue-700 gap-2 sticky top-[88px] z-40 no-scrollbar shadow-lg">
             <button v-for="(day, index) in days" :key="index" 
                 @click="currentDayIndex = index"
                 :class="['px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all', 
@@ -51,43 +88,59 @@
         </div>
 
         <div class="p-4 space-y-4">
-            <div class="bg-white p-4 rounded-xl border-l-4 border-blue-600 shadow-sm">
-                <h2 class="text-xl font-bold text-gray-800">{{ days[currentDayIndex].title }}</h2>
-                <div class="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                    <i class="fas fa-fire text-orange-500"></i> 
-                    <span>Σύνολο: ~{{ calculateTotalCalories }} kcal</span>
-                </div>
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center">
+                <span class="text-blue-800 font-bold text-sm">{{ days[currentDayIndex].title }}</span>
+                <span class="text-xs text-gray-500">{{ days[currentDayIndex].exercises.length }} Ασκήσεις</span>
             </div>
 
-            <div v-for="(exercise, index) in currentDayExercises" :key="index" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                <div class="p-4 border-b border-gray-50 flex justify-between items-start">
-                    <div class="flex-1">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 mb-2 inline-block uppercase tracking-wide">
-                            {{ exercise.muscle }}
-                        </span>
-                        <h3 class="font-bold text-gray-800 text-lg leading-tight">{{ exercise.name }}</h3>
-                        <div class="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                            <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-semibold">
-                                {{ exercise.sets }} Σετ
-                            </span>
-                            <span>x {{ exercise.reps }}</span>
-                        </div>
-                        <p class="text-xs text-orange-500 mt-1 font-medium">~{{ exercise.calories }} θερμίδες</p>
-                        <p v-if="exercise.notes" class="text-xs text-gray-400 mt-2 italic border-l-2 border-gray-300 pl-2">
-                            {{ exercise.notes }}
-                        </p>
+            <div v-for="(exercise, index) in currentDayExercises" :key="index" 
+                 :class="['border rounded-xl shadow-sm overflow-hidden transition-all duration-300', 
+                 exercise.completed ? 'bg-green-50 border-green-200 ring-1 ring-green-300' : 'bg-white border-gray-200']">
+                
+                <div class="p-3 flex gap-3 items-start">
+                    <div class="pt-1">
+                        <input type="checkbox" v-model="exercise.completed" class="custom-checkbox cursor-pointer">
                     </div>
-                    <a :href="'https://www.youtube.com/results?search_query=' + exercise.searchQuery" target="_blank" class="ml-3 p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors">
+
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start">
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 mb-1 inline-block uppercase">
+                                {{ exercise.muscle }}
+                            </span>
+                            <span class="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
+                                {{ calculateExerciseBurn(exercise) }} kcal
+                            </span>
+                        </div>
+                        
+                        <h3 :class="['font-bold text-gray-800 leading-tight mb-2', exercise.completed ? 'text-green-800' : '']">
+                            {{ exercise.name }}
+                        </h3>
+
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="flex items-center bg-gray-100 rounded px-2 py-1">
+                                <span class="text-xs font-bold text-gray-500 mr-1">ΣΕΤ</span>
+                                <span class="text-sm font-bold">{{ exercise.sets }}</span>
+                            </div>
+                            <div class="flex items-center bg-white border border-gray-300 rounded px-2 py-0.5 w-24 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                                <input type="number" v-model="exercise.liftedWeight" placeholder="0" class="w-full text-sm font-bold text-gray-700 outline-none bg-transparent text-right">
+                                <span class="text-xs text-gray-400 ml-1">kg</span>
+                            </div>
+                        </div>
+
+                        <p v-if="exercise.notes" class="text-xs text-gray-400 italic">{{ exercise.notes }}</p>
+                    </div>
+
+                    <a :href="'https://www.youtube.com/results?search_query=' + exercise.searchQuery" target="_blank" class="text-red-500 hover:text-red-600 p-1">
                         <i class="fab fa-youtube text-2xl"></i>
                     </a>
                 </div>
 
-                <div class="grid grid-cols-2 gap-px bg-gray-100">
-                    <button @click="startTimer(40, 'Διάλειμμα Σετ')" class="p-3 bg-white hover:bg-blue-50 text-blue-600 font-semibold text-sm timer-btn flex justify-center items-center gap-2">
-                        <i class="fas fa-stopwatch"></i> 40" Σετ
+                <div class="grid grid-cols-2 gap-px bg-gray-100 border-t border-gray-100">
+                    <button @click="startTimer(40, 'Διάλειμμα')" :class="['p-2 text-sm font-semibold flex justify-center items-center gap-2', exercise.completed ? 'text-green-600 hover:bg-green-100' : 'text-blue-600 hover:bg-blue-50 bg-white']">
+                        <i class="fas fa-stopwatch"></i> 40"
                     </button>
-                    <button @click="startTimer(90, 'Αλλαγή Άσκησης')" class="p-3 bg-white hover:bg-green-50 text-green-600 font-semibold text-sm timer-btn flex justify-center items-center gap-2">
-                        <i class="fas fa-walking"></i> 90" Αλλαγή
+                    <button @click="startTimer(90, 'Αλλαγή')" :class="['p-2 text-sm font-semibold flex justify-center items-center gap-2', exercise.completed ? 'text-green-700 hover:bg-green-100' : 'text-gray-600 hover:bg-gray-50 bg-white']">
+                        <i class="fas fa-walking"></i> 90"
                     </button>
                 </div>
             </div>
@@ -97,87 +150,35 @@
                     <div class="p-2 bg-purple-100 rounded-full text-purple-600">
                         <i class="fas fa-child"></i>
                     </div>
-                    <h3 class="font-bold text-purple-900">Αποθεραπεία & Διατάσεις</h3>
+                    <h3 class="font-bold text-purple-900">Αποθεραπεία</h3>
                 </div>
                 <p class="text-gray-700 text-sm mb-4 leading-relaxed">{{ days[currentDayIndex].stretching }}</p>
-                <button @click="startTimer(15, 'Διάταση')" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-sm shadow transition-colors flex justify-center items-center gap-2">
-                    <i class="fas fa-clock"></i> Χρονόμετρο Διάτασης (15")
+                <button @click="startTimer(15, 'Διάταση')" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-sm shadow flex justify-center items-center gap-2">
+                    <i class="fas fa-clock"></i> Χρονόμετρο 15"
                 </button>
             </div>
         </div>
 
         <div v-if="musicModalOpen" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" @click.self="musicModalOpen = false">
-            <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl transform transition-all h-[80vh] flex flex-col">
-                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center text-white shrink-0">
-                    <h3 class="font-bold text-lg"><i class="fas fa-headphones-alt mr-2"></i>Επιλογή Ήχου</h3>
-                    <button @click="musicModalOpen = false" class="text-white hover:text-gray-200">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+            <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl h-[80vh] flex flex-col">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white shrink-0">
+                    <h3 class="font-bold text-lg">Επιλογή Ήχου</h3>
+                    <button @click="musicModalOpen = false"><i class="fas fa-times text-xl"></i></button>
                 </div>
-                
-                <div class="p-4 overflow-y-auto flex-1">
-                    <div class="mb-6">
-                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Podcasts 🎙️</h4>
+                <div class="p-4 overflow-y-auto flex-1 space-y-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Podcasts 🎙️</h4>
                         <div class="space-y-2">
-                            <a href="https://podlist.gr/podcasts?category=politics&order_by=created_at" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-purple-50 border border-gray-100 transition-colors group">
-                                <div class="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold mr-3 group-hover:scale-110 transition-transform">P</div>
-                                <div>
-                                    <div class="font-bold text-gray-800">Podlist.gr</div>
-                                    <div class="text-xs text-gray-500">Πολιτική & News</div>
-                                </div>
-                                <i class="fas fa-external-link-alt ml-auto text-gray-400"></i>
-                            </a>
-                            <a href="https://www.kathimerini.gr/visual/podcasts/" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-purple-50 border border-gray-100 transition-colors group">
-                                <div class="w-10 h-10 rounded-full bg-blue-800 text-white flex items-center justify-center font-bold mr-3 group-hover:scale-110 transition-transform">K</div>
-                                <div>
-                                    <div class="font-bold text-gray-800">Καθημερινή</div>
-                                    <div class="text-xs text-gray-500">Visual Podcasts</div>
-                                </div>
-                                <i class="fas fa-external-link-alt ml-auto text-gray-400"></i>
-                            </a>
-                            <a href="https://music.youtube.com/playlist?list=PLQRCbhtLyPgAZ6ZjwHcBOuzZs2u2dlKXV" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-purple-50 border border-gray-100 transition-colors group">
-                                <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold mr-3 group-hover:scale-110 transition-transform">L</div>
-                                <div>
-                                    <div class="font-bold text-gray-800">LIFO Podcast</div>
-                                    <div class="text-xs text-gray-500">Συνεντεύξεις</div>
-                                </div>
-                                <i class="fas fa-external-link-alt ml-auto text-gray-400"></i>
-                            </a>
-                            <a href="https://music.youtube.com/channel/UCAmlywA9DomFUHvP2vhGGcQ" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-purple-50 border border-gray-100 transition-colors group">
-                                <div class="w-10 h-10 rounded-full bg-blue-900 text-white flex items-center justify-center font-bold mr-3 group-hover:scale-110 transition-transform">D</div>
-                                <div>
-                                    <div class="font-bold text-gray-800">Dianeosis</div>
-                                    <div class="text-xs text-gray-500">Έρευνα & Ανάλυση</div>
-                                </div>
-                                <i class="fas fa-external-link-alt ml-auto text-gray-400"></i>
-                            </a>
+                            <a href="https://podlist.gr/podcasts?category=politics&order_by=created_at" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-orange-50 font-bold text-gray-800 text-sm">Podlist.gr (Πολιτική)</a>
+                            <a href="https://www.kathimerini.gr/visual/podcasts/" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-blue-50 font-bold text-gray-800 text-sm">Καθημερινή Podcasts</a>
+                             <a href="https://music.youtube.com/playlist?list=PLQRCbhtLyPgAZ6ZjwHcBOuzZs2u2dlKXV" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-black hover:text-white font-bold text-gray-800 text-sm transition-colors">LIFO Podcast</a>
                         </div>
                     </div>
-
-                    <div>
-                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Music 🎧</h4>
+                     <div>
+                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Music 🎧</h4>
                         <div class="space-y-2">
-                            <a href="https://music.youtube.com/playlist?list=PLiNpayiErByFtj94cAUMX3nku5gH9qbFt" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 border border-gray-100 transition-colors group">
-                                <div class="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center mr-3 group-hover:scale-110 transition-transform"><i class="fas fa-bolt"></i></div>
-                                <div>
-                                    <div class="font-bold text-gray-800">House Music</div>
-                                    <div class="text-xs text-gray-500">Ενέργεια & Ρυθμός</div>
-                                </div>
-                            </a>
-                            <a href="https://music.youtube.com/watch?v=-k_LwBgZQQ0" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 border border-gray-100 transition-colors group">
-                                <div class="w-10 h-10 rounded-full bg-purple-500 text-white flex items-center justify-center mr-3 group-hover:scale-110 transition-transform"><i class="fas fa-record-vinyl"></i></div>
-                                <div>
-                                    <div class="font-bold text-gray-800">Deep Disco</div>
-                                    <div class="text-xs text-gray-500">House Mix</div>
-                                </div>
-                            </a>
-                            <a href="https://music.youtube.com/playlist?list=OLAK5uy_m8fhG_6nAqlzE4fQFTJrYUkJDOuR4M-Jk" target="_blank" class="flex items-center p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 border border-gray-100 transition-colors group">
-                                <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center mr-3 group-hover:scale-110 transition-transform"><i class="fas fa-pizza-slice"></i></div>
-                                <div>
-                                    <div class="font-bold text-gray-800">Musica Italiana</div>
-                                    <div class="text-xs text-gray-500">Hits & Classics</div>
-                                </div>
-                            </a>
+                             <a href="https://music.youtube.com/playlist?list=PLiNpayiErByFtj94cAUMX3nku5gH9qbFt" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-indigo-100 font-bold text-gray-800 text-sm">House Music</a>
+                             <a href="https://music.youtube.com/watch?v=-k_LwBgZQQ0" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-purple-100 font-bold text-gray-800 text-sm">Deep Disco</a>
                         </div>
                     </div>
                 </div>
@@ -191,8 +192,8 @@
                 <div class="text-sm text-center text-gray-400 mt-2">δευτερόλεπτα</div>
             </div>
             <div class="flex flex-col gap-4 w-64">
-                <button @click="addTime(10)" class="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-medium transition-colors border border-slate-600">+10 Δευτερόλεπτα</button>
-                <button @click="stopTimer" class="w-full py-4 bg-red-500 hover:bg-red-600 rounded-xl font-bold text-lg shadow-lg shadow-red-500/30 transition-all transform hover:scale-105">ΣΤΑΜΑΤΗΜΑ</button>
+                <button @click="addTime(10)" class="w-full py-3 bg-slate-700 rounded-xl font-medium border border-slate-600">+10 Δευτερόλεπτα</button>
+                <button @click="stopTimer" class="w-full py-4 bg-red-500 rounded-xl font-bold text-lg shadow-lg">ΣΤΑΜΑΤΗΜΑ</button>
             </div>
         </div>
     </div>
@@ -207,119 +208,102 @@
                     todayName: '',
                     timerActive: false,
                     musicModalOpen: false,
+                    settingsOpen: false,
                     timeLeft: 0,
                     timerLabel: '',
                     intervalId: null,
+                    userWeight: 80, // Default weight
                     audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
+                    // Days Data Structure
                     days: [
                         {
                             label: 'Δευτέρα',
                             title: 'Δευτέρα: Στήθος & Δικέφαλοι',
-                            stretching: 'Διατάσεις Στήθους & Δικεφάλων (1 σετ, 15")',
+                            stretching: 'Διατάσεις Στήθους & Δικεφάλων',
                             exercises: [
-                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Τρέξιμο', sets: 1, reps: "10'-20'", calories: 120, searchQuery: 'treadmill warmup', notes: 'Διάδρομος' },
-                                { muscle: 'Στήθος', name: 'Πιέσεις Στήθους (Αλτήρες)', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Dumbbell Chest Press' },
-                                { muscle: 'Στήθος', name: 'Pec Deck ή Crossover', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Pec Deck Machine' },
-                                { muscle: 'Στήθος', name: 'Πιέσεις σε Επικλινή (Αλτήρες)', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Incline Dumbbell Press' },
-                                { muscle: 'Στήθος', name: 'Βυθίσεις (Machine)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Dip Machine Chest' },
-                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις με Ίσια Μπάρα', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Barbell Curl' },
-                                { muscle: 'Δικέφαλοι', name: 'Σφυριά (Αλτήρες)', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Hammer Curls' },
-                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις με μια λαβή', sets: 3, reps: '10-12', calories: 25, searchQuery: 'Single Arm Cable Curl' },
-                                { muscle: 'Core', name: 'Σανίδα', sets: 1, reps: "30''", calories: 20, searchQuery: 'Plank' },
-                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα (Machine)', sets: 3, reps: '15', calories: 30, searchQuery: 'Ab Machine Crunch' },
-                                { muscle: 'Αερόβιο', name: 'Περπάτημα (Διάδρομος)', sets: 1, reps: "30'", calories: 150, searchQuery: 'Treadmill walking' }
+                                { muscle: 'Warmup', name: 'Χαλαρό Τρέξιμο', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
+                                { muscle: 'Στήθος', name: 'Πιέσεις Στήθους (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Chest Press', type: 'strength' },
+                                { muscle: 'Στήθος', name: 'Pec Deck / Crossover', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Pec Deck Machine', type: 'strength' },
+                                { muscle: 'Στήθος', name: 'Πιέσεις Επικλινή', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Incline Dumbbell Press', type: 'strength' },
+                                { muscle: 'Στήθος', name: 'Βυθίσεις', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dip Machine Chest', type: 'strength' },
+                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις Μπάρας', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Barbell Curl', type: 'strength' },
+                                { muscle: 'Δικέφαλοι', name: 'Σφυριά', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Hammer Curls', type: 'strength' },
+                                { muscle: 'Core', name: 'Σανίδα', sets: 1, reps: "30''", liftedWeight: 0, searchQuery: 'Plank', type: 'iso' },
+                                { muscle: 'Cardio', name: 'Περπάτημα', sets: 1, reps: "30'", liftedWeight: 0, searchQuery: 'Treadmill walking', type: 'cardio' }
                             ]
                         },
                         {
                             label: 'Τρίτη',
                             title: 'Τρίτη: Πλάτη & Τρικέφαλοι',
-                            stretching: 'Διατάσεις Πλάτης & Τρικεφάλων (1 σετ, 15")',
+                            stretching: 'Διατάσεις Πλάτης & Τρικεφάλων',
                             exercises: [
-                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'-20'", calories: 80, searchQuery: 'treadmill warmup' },
-                                { muscle: 'Πλάτη', name: 'Έλξεις με Υποβοήθηση', sets: 3, reps: '10-12', calories: 50, searchQuery: 'Assisted Pull Up Machine' },
-                                { muscle: 'Πλάτη', name: 'Seated Row Ανοιχτή', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Wide Grip Seated Row' },
-                                { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλία', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Seated Cable Row' },
-                                { muscle: 'Τρικέφαλοι', name: 'Πιέσεις με Σχοινί', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Tricep Rope Pushdown' },
-                                { muscle: 'Τρικέφαλοι', name: 'Overhead Extension', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Overhead Extension' },
-                                { muscle: 'Τρικέφαλοι', name: 'Βυθίσεις (Machine)', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Tricep Dip Machine' },
-                                { muscle: 'Κοιλιακοί', name: 'Πλάγιοι Κοιλιακοί', sets: 3, reps: '15', calories: 25, searchQuery: 'Oblique Crunches' },
-                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι στο Στρώμα', sets: 3, reps: '15', calories: 20, searchQuery: 'Superman exercise' },
-                                { muscle: 'Αερόβιο', name: 'Περπάτημα (Διάδρομος)', sets: 1, reps: "30'", calories: 150, searchQuery: 'Treadmill walking' }
+                                { muscle: 'Warmup', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
+                                { muscle: 'Πλάτη', name: 'Έλξεις (Assisted)', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Assisted Pull Up', type: 'strength' },
+                                { muscle: 'Πλάτη', name: 'Seated Row', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Wide Grip Seated Row', type: 'strength' },
+                                { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλία', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Seated Cable Row', type: 'strength' },
+                                { muscle: 'Τρικέφαλοι', name: 'Πιέσεις Σχοινί', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Tricep Rope Pushdown', type: 'strength' },
+                                { muscle: 'Τρικέφαλοι', name: 'Overhead Ext', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Overhead Extension', type: 'strength' },
+                                { muscle: 'Abs', name: 'Πλάγιοι', sets: 3, reps: '15', liftedWeight: 0, searchQuery: 'Oblique Crunches', type: 'iso' }
                             ]
                         },
                         {
                             label: 'Τετάρτη',
                             title: 'Τετάρτη: Πόδια & Ώμοι',
-                            stretching: 'Διατάσεις Ποδιών & Ώμων (1 σετ, 15")',
+                            stretching: 'Διατάσεις Ποδιών & Ώμων',
                             exercises: [
-                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'-20'", calories: 80, searchQuery: 'treadmill warmup' },
-                                { muscle: 'Πόδια', name: 'Leg Press', sets: 3, reps: '10-12', calories: 65, searchQuery: 'Leg Press' },
-                                { muscle: 'Πόδια', name: 'Leg Extension', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Leg Extension' },
-                                { muscle: 'Πόδια', name: 'Seated Leg Curl', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Seated Leg Curl' },
-                                { muscle: 'Πόδια', name: 'Προσαγωγοί - Απαγωγοί', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Hip Adduction Machine' },
-                                { muscle: 'Γάμπες', name: 'Seated Calf Raises', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Seated Calf Raise' },
-                                { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Αλτήρες)', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Dumbbell Shoulder Press' },
-                                { muscle: 'Ώμοι', name: 'Εκτάσεις Πλάγιες', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Lateral Raise' },
-                                { muscle: 'Ώμοι', name: 'Εκτάσεις Εμπρόσθιες', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Front Raise' },
-                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα', sets: 3, reps: '15', calories: 25, searchQuery: 'Crunches' },
-                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι (Mat)', sets: 4, reps: '15', calories: 30, searchQuery: 'Back Extensions Floor' },
-                                { muscle: 'Αερόβιο', name: 'Περπάτημα (Διάδρομος)', sets: 1, reps: "30'", calories: 150, searchQuery: 'Treadmill walking' }
+                                { muscle: 'Warmup', name: 'Περπάτημα', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
+                                { muscle: 'Πόδια', name: 'Leg Press', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Leg Press', type: 'strength' },
+                                { muscle: 'Πόδια', name: 'Leg Extension', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Leg Extension', type: 'strength' },
+                                { muscle: 'Πόδια', name: 'Leg Curl', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Seated Leg Curl', type: 'strength' },
+                                { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Shoulder Press', type: 'strength' },
+                                { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Lateral Raise', type: 'strength' }
                             ]
                         },
                         {
                             label: 'Πέμπτη',
                             title: 'Πέμπτη: Στήθος & Τρικέφαλοι (B)',
-                            stretching: 'Διατάσεις Στήθους & Τρικεφάλων',
+                            stretching: 'Διατάσεις Στήθους',
                             exercises: [
-                                { muscle: 'Προθέρμανση', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'-20'", calories: 80, searchQuery: 'treadmill warmup' },
-                                { muscle: 'Στήθος', name: 'Πιέσεις Στήθους (Machine)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Chest Press Machine' },
-                                { muscle: 'Στήθος', name: 'Εκτάσεις Επικλινή', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Incline Dumbbell Flyes' },
-                                { muscle: 'Στήθος', name: 'Incline Press (Machine)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Incline Chest Press Machine' },
-                                { muscle: 'Στήθος', name: 'Pec Deck', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Pec Deck' },
-                                { muscle: 'Τρικέφαλοι', name: 'Εκτάσεις με ένα χέρι', sets: 3, reps: '10-12', calories: 25, searchQuery: 'Single Arm Tricep Extension' },
-                                { muscle: 'Τρικέφαλοι', name: 'Πιέσεις με ίσια λαβή', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Straight Bar Tricep Pushdown' },
-                                { muscle: 'Τρικέφαλοι', name: 'Γαλλικές Πιέσεις', sets: 3, reps: '10-12', calories: 35, searchQuery: 'Skullcrushers' },
-                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα', sets: 6, reps: '12-15', calories: 60, searchQuery: 'Crunches', notes: '2 Ασκήσεις x 3 σετ' },
-                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι (Bull)', sets: 4, reps: '12-15', calories: 40, searchQuery: 'Back Extension Bench' }
+                                { muscle: 'Warmup', name: 'Περπάτημα', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
+                                { muscle: 'Στήθος', name: 'Chest Press Machine', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Chest Press Machine', type: 'strength' },
+                                { muscle: 'Στήθος', name: 'Incline Flyes', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Incline Dumbbell Flyes', type: 'strength' },
+                                { muscle: 'Τρικέφαλοι', name: 'Single Arm Ext', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Single Arm Tricep Extension', type: 'strength' },
+                                { muscle: 'Τρικέφαλοι', name: 'Skullcrushers', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Skullcrushers', type: 'strength' }
                             ]
                         },
                         {
                             label: 'Παρασκευή',
                             title: 'Παρασκευή: Πλάτη & Δικέφαλοι (B)',
-                            stretching: 'Διατάσεις Πλάτης & Δικεφάλων',
+                            stretching: 'Διατάσεις Πλάτης',
                             exercises: [
-                                { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Lat Pulldown' },
-                                { muscle: 'Πλάτη', name: 'Low Row (Τροχαλία)', sets: 3, reps: '10-12', calories: 45, searchQuery: 'Low Cable Row' },
-                                { muscle: 'Πλάτη', name: 'Seated Row (Ένα-Ένα)', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Single Arm Machine Row' },
-                                { muscle: 'Πλάτη', name: 'Seated Row Ανοιχτή', sets: 3, reps: '10-12', calories: 40, searchQuery: 'Wide Grip Seated Row' },
-                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις (Αλτήρες)', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Dumbbell Curls' },
-                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις Αυτοσυγκέντρωσης', sets: 3, reps: '10-12', calories: 30, searchQuery: 'Concentration Curls' },
-                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις (Στραβομπάρα)', sets: 3, reps: '10-12', calories: 35, searchQuery: 'EZ Bar Curl' },
-                                { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα', sets: 3, reps: '12-15', calories: 25, searchQuery: 'Crunches' },
-                                { muscle: 'Core', name: 'Σανίδα', sets: 2, reps: "30''", calories: 30, searchQuery: 'Plank' },
-                                { muscle: 'Ραχιαίοι', name: 'Ραχιαίοι Στρώμα', sets: 3, reps: '12-15', calories: 20, searchQuery: 'Superman exercise' }
+                                { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Lat Pulldown', type: 'strength' },
+                                { muscle: 'Πλάτη', name: 'Low Row', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Low Cable Row', type: 'strength' },
+                                { muscle: 'Δικέφαλοι', name: 'Dumbbell Curls', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Curls', type: 'strength' },
+                                { muscle: 'Δικέφαλοι', name: 'Στραβομπάρα', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'EZ Bar Curl', type: 'strength' },
+                                { muscle: 'Core', name: 'Σανίδα', sets: 2, reps: "30''", liftedWeight: 0, searchQuery: 'Plank', type: 'iso' }
                             ]
                         },
                         {
                             label: 'Σάββατο',
-                            title: 'Σάββατο: Αερόβια (Cardio)',
-                            stretching: 'Διατάσεις Ολόκληρου Σώματος',
+                            title: 'Σάββατο: Cardio',
+                            stretching: 'Full Body Stretch',
                             exercises: [
-                                { muscle: 'Προθέρμανση', name: 'Δυναμικές Διατάσεις', sets: 1, reps: "5'-10'", calories: 50, searchQuery: 'dynamic stretching warmup', notes: 'Προετοιμασία αρθρώσεων' },
-                                { muscle: 'Κυρίως', name: 'Διάδρομος (Τρέξιμο/Γρήγορο βάδην)', sets: 1, reps: "30'-45'", calories: 300, searchQuery: 'treadmill workout', notes: 'Σταθερός ρυθμός ή εναλλαγές' },
-                                { muscle: 'Κυρίως', name: 'Ελλειπτικό ή Ποδήλατο', sets: 1, reps: "15'", calories: 120, searchQuery: 'elliptical workout', notes: 'Προαιρετικά για ποικιλία' },
-                                { muscle: 'Core', name: 'Κοιλιακοί (Ροκανίσματα)', sets: 3, reps: '20', calories: 30, searchQuery: 'Crunches' },
-                                { muscle: 'Core', name: 'Σανίδα', sets: 3, reps: "45''", calories: 40, searchQuery: 'Plank' }
+                                { muscle: 'Cardio', name: 'Διάδρομος', sets: 1, reps: "45'", liftedWeight: 0, searchQuery: 'treadmill workout', type: 'cardio' },
+                                { muscle: 'Cardio', name: 'Ελλειπτικό', sets: 1, reps: "15'", liftedWeight: 0, searchQuery: 'elliptical workout', type: 'cardio' },
+                                { muscle: 'Abs', name: 'Κοιλιακοί', sets: 3, reps: '20', liftedWeight: 0, searchQuery: 'Crunches', type: 'iso' }
                             ]
                         }
                     ]
                 }
             },
             mounted() {
-                const daysMap = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
+                // Load weight from storage
+                const savedWeight = localStorage.getItem('userWeight');
+                if (savedWeight) this.userWeight = parseFloat(savedWeight);
+
+                // Auto select day
                 const d = new Date();
                 const dayIndex = d.getDay();
-                this.todayName = daysMap[dayIndex];
                 if (dayIndex >= 1 && dayIndex <= 6) {
                     this.currentDayIndex = dayIndex - 1;
                 } else {
@@ -330,11 +314,44 @@
                 currentDayExercises() {
                     return this.days[this.currentDayIndex].exercises;
                 },
-                calculateTotalCalories() {
-                    return this.currentDayExercises.reduce((acc, curr) => acc + curr.calories, 0);
+                totalBurnedSoFar() {
+                    return this.currentDayExercises
+                        .filter(ex => ex.completed)
+                        .reduce((acc, curr) => acc + parseFloat(this.calculateExerciseBurn(curr)), 0);
                 }
             },
             methods: {
+                saveWeight() {
+                    localStorage.setItem('userWeight', this.userWeight);
+                },
+                calculateExerciseBurn(exercise) {
+                    // Logic for Calorie Calculation
+                    // Formula approximation: 
+                    // Base Burn = BodyWeight * IntensityFactor * Time(Sets)
+                    // Load Burn = LiftedWeight * 0.05 * Sets
+                    
+                    let baseBurn = 0;
+                    let loadBurn = 0;
+                    const weight = this.userWeight || 75;
+                    const lifted = parseFloat(exercise.liftedWeight) || 0;
+                    const sets = exercise.sets;
+
+                    if (exercise.type === 'cardio') {
+                        // Cardio: High base burn based on time (approx from reps string)
+                        let mins = parseInt(exercise.reps) || 15;
+                        baseBurn = (mins * 8 * weight) / 200; // METs formula approx
+                    } else if (exercise.type === 'strength') {
+                        // Strength: Moderate base + Load factor
+                        // Assume 1 set takes ~2 mins active+rest
+                        baseBurn = (weight * 0.05 * sets * 2.5); 
+                        loadBurn = (lifted * 0.03 * sets);
+                    } else if (exercise.type === 'iso') {
+                        // Plank/Abs: Low base, no load usually
+                        baseBurn = (weight * 0.04 * sets * 1.5);
+                    }
+
+                    return (baseBurn + loadBurn).toFixed(0);
+                },
                 startTimer(seconds, label) {
                     this.timerLabel = label;
                     this.timeLeft = seconds;
@@ -343,14 +360,13 @@
                     this.intervalId = setInterval(() => {
                         this.timeLeft--;
                         if (this.timeLeft <= 0) {
-                            this.playBeep();
+                            this.audio.play().catch(e=>{});
                             this.stopTimer();
                         }
                     }, 1000);
                 },
                 addTime(seconds) { this.timeLeft += seconds; },
-                stopTimer() { clearInterval(this.intervalId); this.timerActive = false; },
-                playBeep() { this.audio.play().catch(e => console.log('Audio require interaction')); }
+                stopTimer() { clearInterval(this.intervalId); this.timerActive = false; }
             }
         }).mount('#app')
     </script>
