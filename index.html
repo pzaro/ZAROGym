@@ -32,7 +32,7 @@
                     <h1 class="text-xl font-black text-blue-500 uppercase tracking-tighter flex items-center gap-2">
                         <i class="fas fa-sliders-h text-sm"></i> Fitness Hub
                     </h1>
-                    <p class="text-[10px] text-slate-400">Mode: Fat Loss & Cutting</p>
+                    <p class="text-[10px] text-slate-400">Mode: 4-Day Upper/Lower (2x / Εβδομάδα)</p>
                 </div>
                 <div class="text-right">
                     <div class="text-xs opacity-50 uppercase">Υπόλοιπο (Kcal)</div>
@@ -99,10 +99,15 @@
         <div v-if="activeTab === 'Gym'" class="p-4 animate-in">
             <div class="flex overflow-x-auto gap-2 mb-4 no-scrollbar">
                 <button v-for="(day, index) in days" :key="index" @click="currentDayIndex = index"
-                    :class="['px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors', currentDayIndex === index ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400']">
+                    :class="['px-5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors flex-1 text-center', currentDayIndex === index ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400']">
                     {{ day.label }}
                 </button>
             </div>
+            
+            <div class="mb-4 bg-slate-800 border border-slate-700 rounded-lg p-3">
+                <h2 class="text-sm font-bold text-white">{{ days[currentDayIndex].title }}</h2>
+            </div>
+
             <div class="space-y-4">
                 <div v-for="(ex, i) in currentDayExercises" :key="i" class="card overflow-hidden transition-all" :class="ex.completed ? 'border-green-500 bg-slate-800/50' : 'border-slate-700'">
                     <div class="p-4">
@@ -115,7 +120,7 @@
                                 </div>
                                 <h3 class="font-bold text-sm text-slate-100" :class="ex.completed ? 'line-through opacity-50' : ''">{{ ex.name }}</h3>
                                 <div class="flex items-center gap-4 mt-3">
-                                    <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-white font-bold">{{ ex.sets }} ΣΕΤ</span>
+                                    <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-white font-bold">{{ ex.sets }} ΣΕΤ | {{ ex.reps }}</span>
                                     <div class="flex items-center border-b border-slate-500 focus-within:border-blue-400 transition-colors">
                                         <input type="number" v-model="ex.liftedWeight" placeholder="0" class="w-10 bg-transparent text-center font-bold text-sm text-white outline-none">
                                         <span class="text-[10px] text-slate-400 ml-1 pb-1">kg</span>
@@ -340,7 +345,7 @@
                     // User Data
                     userWeight: 80,
                     userHeight: 180,
-                    userAge: 30,
+                    userAge: 53,
                     waterGlasses: 0,
                     
                     // Timers
@@ -371,14 +376,36 @@
                     isSyncing: false,
                     audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
                     
-                    // Workouts
+                    // Workouts (True 2x Frequency / Upper-Lower Split)
                     days: [
-                        { label: 'ΔΕΥ', title: 'Στήθος & Πλάτη', stretching: 'Διατάσεις Θώρακα & Πλάτης', exercises: [{ muscle: 'Στήθος', name: 'Πιέσεις Επικλινή (Αλτήρες)', sets: 4, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Incline Dumbbell Press' }, { muscle: 'Πλάτη', name: 'Κωπηλατική Μπάρας', sets: 4, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Barbell Row' }, { muscle: 'Στήθος', name: 'Πιέσεις Ίσιου Πάγκου', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Flat Bench Press' }, { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Lat Pulldown' }, { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill Fat Burn' }]},
-                        { label: 'ΤΡΙ', title: 'Πόδια & Κοιλιακοί', stretching: 'Διατάσεις Τετρακέφαλων & Μηριαίων', exercises: [{ muscle: 'Πόδια', name: 'Squat (Καθίσματα)', sets: 4, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Barbell Squat' }, { muscle: 'Πόδια', name: 'Άρσεις Θανάτου (RDLs)', sets: 4, reps: '10', liftedWeight: '', type: 'strength', searchQuery: 'Romanian Deadlift' }, { muscle: 'Πόδια', name: 'Leg Press', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Press' }, { muscle: 'Κοιλιακοί', name: 'Άρσεις Ποδιών', sets: 4, reps: '15', liftedWeight: 0, type: 'iso', searchQuery: 'Hanging Leg Raises' }, { muscle: 'Cardio', name: 'LISS - Ποδήλατο', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Stationary Bike Workout' }]},
-                        { label: 'ΤΕΤ', title: 'Ώμοι & Χέρια', stretching: 'Διατάσεις Ώμων & Χεριών', exercises: [{ muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Overhead)', sets: 4, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Seated Dumbbell Shoulder Press' }, { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις Ώμων', sets: 4, reps: '12-15', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lateral Raise' }, { muscle: 'Δικέφαλοι', name: 'Κάμψεις Δικεφάλων', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Barbell Bicep Curl' }, { muscle: 'Τρικέφαλοι', name: 'Γαλλικές Πιέσεις', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Skullcrushers' }, { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }]},
-                        { label: 'ΠΕΜ', title: 'Full Body & HIIT', stretching: 'Δυναμικές Διατάσεις Σώματος', exercises: [{ muscle: 'Πόδια', name: 'Προβολές (Lunges)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lunges' }, { muscle: 'Στήθος', name: 'Πιέσεις Μηχανήματος', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Chest Press Machine' }, { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλίας', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Seated Cable Row' }, { muscle: 'Ώμοι', name: 'Face Pulls', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Cable Face Pulls' }, { muscle: 'Cardio', name: 'HIIT Διάδρομος (1\' Fast / 1\' Slow)', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'HIIT Treadmill Workout' }]},
-                        { label: 'ΠΑΡ', title: 'Pump & Αδύναμα Σημεία', stretching: 'Διατάσεις Στήθους', exercises: [{ muscle: 'Στήθος', name: 'Pec Deck / Flyes', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Pec Deck Flyes' }, { muscle: 'Πλάτη', name: 'Πουλόβερ', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Pullover' }, { muscle: 'Δικέφαλοι', name: 'Σφυριά (Hammer Curls)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Hammer Curls' }, { muscle: 'Τρικέφαλοι', name: 'Πιέσεις με Σχοινί', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Tricep Rope Pushdown' }, { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }]},
-                        { label: 'ΣΑΒ', title: 'Fat Burn (Cardio & Core)', stretching: 'Πλήρες Πρόγραμμα Διατάσεων', exercises: [{ muscle: 'Cardio', name: 'Γρήγορο Περπάτημα ή Ελλειπτικό', sets: 1, reps: '45', liftedWeight: 0, type: 'cardio', searchQuery: 'LISS Cardio Elliptical' }, { muscle: 'Κοιλιακοί', name: 'Woodchoppers (Τροχαλία)', sets: 3, reps: '15', liftedWeight: '', type: 'iso', searchQuery: 'Cable Woodchopper' }, { muscle: 'Κοιλιακοί', name: 'Σανίδα (Plank)', sets: 3, reps: '60"', liftedWeight: 0, type: 'iso', searchQuery: 'Plank form' }]}
+                        { label: 'UPPER A', title: 'Άνω Σώμα Α (Στήθος, Πλάτη, Ώμοι, Χέρια)', stretching: 'Διατάσεις Άνω Σώματος', exercises: [
+                            { muscle: 'Στήθος', name: 'Πιέσεις Πάγκου ή Μηχανήματος', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Chest Press Machine' },
+                            { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλίας', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Seated Cable Row' },
+                            { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Shoulder Press' },
+                            { muscle: 'Χέρια', name: 'Κάμψεις Δικεφάλων & Πιέσεις Τρικεφάλων', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Bicep Curl and Tricep Pushdown' },
+                            { muscle: 'Cardio', name: 'LISS - Περπάτημα (Ανηφόρα)', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }
+                        ]},
+                        { label: 'LOWER A', title: 'Κάτω Σώμα Α & Κορμός', stretching: 'Διατάσεις Ποδιών & Μέσης', exercises: [
+                            { muscle: 'Πόδια', name: 'Leg Press', sets: 4, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Press' },
+                            { muscle: 'Πόδια', name: 'Άρσεις Θανάτου (RDLs)', sets: 3, reps: '10', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell RDL' },
+                            { muscle: 'Γάμπες', name: 'Ακροστασίες (Calf Raises)', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Standing Calf Raises' },
+                            { muscle: 'Κοιλιακοί', name: 'Σανίδα (Plank)', sets: 3, reps: '45"', liftedWeight: 0, type: 'iso', searchQuery: 'Plank form' },
+                            { muscle: 'Cardio', name: 'LISS - Ποδήλατο', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Stationary Bike' }
+                        ]},
+                        { label: 'UPPER B', title: 'Άνω Σώμα Β (Στήθος, Πλάτη, Ώμοι, Χέρια)', stretching: 'Διατάσεις Άνω Σώματος', exercises: [
+                            { muscle: 'Στήθος', name: 'Πιέσεις Επικλινή (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Incline Dumbbell Press' },
+                            { muscle: 'Πλάτη', name: 'Lat Pulldown (Τροχαλία)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Lat Pulldown' },
+                            { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις (Αλτήρες)', sets: 3, reps: '12-15', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lateral Raise' },
+                            { muscle: 'Χέρια', name: 'Σφυριά (Δικέφαλοι) & Γαλλικές (Τρικ.)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Hammer Curls and Skullcrushers' },
+                            { muscle: 'Cardio', name: 'LISS - Περπάτημα (Ανηφόρα)', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }
+                        ]},
+                        { label: 'LOWER B', title: 'Κάτω Σώμα Β & Κορμός', stretching: 'Διατάσεις Ποδιών & Μέσης', exercises: [
+                            { muscle: 'Πόδια', name: 'Προβολές (Lunges) ή Squat', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lunges' },
+                            { muscle: 'Πόδια', name: 'Leg Curls (Μηχάνημα)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Seated Leg Curl' },
+                            { muscle: 'Πόδια', name: 'Leg Extensions (Μηχάνημα)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Extension' },
+                            { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα (Crunches)', sets: 3, reps: '15-20', liftedWeight: 0, type: 'iso', searchQuery: 'Crunches' },
+                            { muscle: 'Cardio', name: 'Ελλειπτικό', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Elliptical Workout' }
+                        ]}
                     ]
                 }
             },
@@ -417,7 +444,7 @@
                 }
             },
             mounted() {
-                const saved = JSON.parse(localStorage.getItem('workout_ultimate_v1') || '{}');
+                const saved = JSON.parse(localStorage.getItem('workout_4day_v2') || '{}');
                 if (saved.weight) this.userWeight = saved.weight;
                 if (saved.height) this.userHeight = saved.height;
                 if (saved.age) this.userAge = saved.age;
@@ -433,7 +460,6 @@
                 
                 const now = new Date();
                 this.lastMealTimeInput = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                this.currentDayIndex = Math.max(0, now.getDay() - 1);
 
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.relative')) this.showSuggestions = false;
@@ -441,7 +467,7 @@
             },
             methods: {
                 saveData() { 
-                    localStorage.setItem('workout_ultimate_v1', JSON.stringify({ 
+                    localStorage.setItem('workout_4day_v2', JSON.stringify({ 
                         weight: this.userWeight, height: this.userHeight, age: this.userAge,
                         meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime 
                     })); 
@@ -484,7 +510,7 @@
                 },
                 removeMeal(i) { this.meals.splice(i, 1); this.saveData(); },
                 
-                // Workout logic RESTORED
+                // Workout logic with LiftedWeight factored in
                 calculateBurn(ex) {
                     let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets || 3;
                     if (ex.type === 'cardio') b = (parseInt(ex.reps || 20) * 7 * w) / 200;
