@@ -32,7 +32,7 @@
                     <h1 class="text-xl font-black text-blue-500 uppercase tracking-tighter flex items-center gap-2">
                         <i class="fas fa-sliders-h text-sm"></i> Fitness Hub
                     </h1>
-                    <p class="text-[10px] text-slate-400">Mode: 4-Day Upper/Lower (2x / Εβδομάδα)</p>
+                    <p class="text-[10px] text-slate-400">Mode: 4-Day Upper/Lower (Optimal Volume)</p>
                 </div>
                 <div class="text-right">
                     <div class="text-xs opacity-50 uppercase">Υπόλοιπο (Kcal)</div>
@@ -104,8 +104,9 @@
                 </button>
             </div>
             
-            <div class="mb-4 bg-slate-800 border border-slate-700 rounded-lg p-3">
+            <div class="mb-4 bg-slate-800 border border-slate-700 rounded-lg p-3 flex justify-between items-center">
                 <h2 class="text-sm font-bold text-white">{{ days[currentDayIndex].title }}</h2>
+                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded-full text-slate-300">{{ currentDayExercises.length }} Ασκήσεις</span>
             </div>
 
             <div class="space-y-4">
@@ -296,7 +297,6 @@
     <script>
         const { createApp } = Vue
 
-        // GOOGLE SHEETS IDs
         const CONFIG = {
             FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLScnahaQL9EB9DZxbJ-hOYvTN0amQwdrYBKoHmjSZqws_sOPxg/formResponse',
             ID_WORKOUT: 'entry.1984241690',
@@ -342,26 +342,22 @@
                     activeTab: 'Gym',
                     currentDayIndex: 0,
                     
-                    // User Data
                     userWeight: 80,
                     userHeight: 180,
                     userAge: 53,
                     waterGlasses: 0,
                     
-                    // Timers
                     timerActive: false,
                     timeLeft: 0,
                     timerLabel: '',
                     intervalId: null,
                     
-                    // Fasting
                     isFasting: false,
                     fastStartTime: null,
                     fastingTimeLeft: '16:00:00',
                     fastingEndTimeLabel: '--:--',
                     lastMealTimeInput: '',
                     
-                    // Diet
                     meals: [],
                     searchQuery: '',
                     showSuggestions: false,
@@ -370,40 +366,45 @@
                     foodGrams: 100,
                     newMeal: { name: '', cals: '', protein: '' },
                     
-                    // UI States
                     settingsOpen: false,
                     musicModalOpen: false,
                     isSyncing: false,
                     audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
                     
-                    // Workouts (True 2x Frequency / Upper-Lower Split)
+                    // ΕΝΗΜΕΡΩΜΕΝΟ WORKOUT PLAN (Optimal Volume 6+1 ασκήσεις)
                     days: [
                         { label: 'UPPER A', title: 'Άνω Σώμα Α (Στήθος, Πλάτη, Ώμοι, Χέρια)', stretching: 'Διατάσεις Άνω Σώματος', exercises: [
                             { muscle: 'Στήθος', name: 'Πιέσεις Πάγκου ή Μηχανήματος', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Chest Press Machine' },
                             { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλίας', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Seated Cable Row' },
-                            { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Shoulder Press' },
-                            { muscle: 'Χέρια', name: 'Κάμψεις Δικεφάλων & Πιέσεις Τρικεφάλων', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Bicep Curl and Tricep Pushdown' },
+                            { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Αλτήρες/Μπάρα)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Shoulder Press' },
+                            { muscle: 'Πλάτη', name: 'Lat Pulldown (Κάθετη έλξη)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Lat Pulldown' },
+                            { muscle: 'Δικέφαλοι', name: 'Κάμψεις (Αλτήρες)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Bicep Curl' },
+                            { muscle: 'Τρικέφαλοι', name: 'Πιέσεις Τροχαλίας (Σχοινί)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Tricep Rope Pushdown' },
                             { muscle: 'Cardio', name: 'LISS - Περπάτημα (Ανηφόρα)', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }
                         ]},
                         { label: 'LOWER A', title: 'Κάτω Σώμα Α & Κορμός', stretching: 'Διατάσεις Ποδιών & Μέσης', exercises: [
                             { muscle: 'Πόδια', name: 'Leg Press', sets: 4, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Press' },
                             { muscle: 'Πόδια', name: 'Άρσεις Θανάτου (RDLs)', sets: 3, reps: '10', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell RDL' },
-                            { muscle: 'Γάμπες', name: 'Ακροστασίες (Calf Raises)', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Standing Calf Raises' },
+                            { muscle: 'Πόδια', name: 'Εκτάσεις Τετρακέφαλων (Μηχάνημα)', sets: 3, reps: '12-15', liftedWeight: '', type: 'strength', searchQuery: 'Leg Extension' },
+                            { muscle: 'Γάμπες', name: 'Ακροστασίες', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Standing Calf Raises' },
                             { muscle: 'Κοιλιακοί', name: 'Σανίδα (Plank)', sets: 3, reps: '45"', liftedWeight: 0, type: 'iso', searchQuery: 'Plank form' },
                             { muscle: 'Cardio', name: 'LISS - Ποδήλατο', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Stationary Bike' }
                         ]},
                         { label: 'UPPER B', title: 'Άνω Σώμα Β (Στήθος, Πλάτη, Ώμοι, Χέρια)', stretching: 'Διατάσεις Άνω Σώματος', exercises: [
                             { muscle: 'Στήθος', name: 'Πιέσεις Επικλινή (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Incline Dumbbell Press' },
-                            { muscle: 'Πλάτη', name: 'Lat Pulldown (Τροχαλία)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Lat Pulldown' },
+                            { muscle: 'Πλάτη', name: 'Lat Pulldown ή Έλξεις', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Assisted Pull Ups' },
+                            { muscle: 'Πλάτη', name: 'Κωπηλατική (Αλτήρα ή Μπάρας)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Row' },
                             { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις (Αλτήρες)', sets: 3, reps: '12-15', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lateral Raise' },
-                            { muscle: 'Χέρια', name: 'Σφυριά (Δικέφαλοι) & Γαλλικές (Τρικ.)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Hammer Curls and Skullcrushers' },
+                            { muscle: 'Δικέφαλοι', name: 'Σφυριά (Hammer Curls)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Hammer Curls' },
+                            { muscle: 'Τρικέφαλοι', name: 'Γαλλικές Πιέσεις ή Overhead', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Overhead Tricep Extension' },
                             { muscle: 'Cardio', name: 'LISS - Περπάτημα (Ανηφόρα)', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }
                         ]},
                         { label: 'LOWER B', title: 'Κάτω Σώμα Β & Κορμός', stretching: 'Διατάσεις Ποδιών & Μέσης', exercises: [
                             { muscle: 'Πόδια', name: 'Προβολές (Lunges) ή Squat', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lunges' },
-                            { muscle: 'Πόδια', name: 'Leg Curls (Μηχάνημα)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Seated Leg Curl' },
-                            { muscle: 'Πόδια', name: 'Leg Extensions (Μηχάνημα)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Extension' },
-                            { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα (Crunches)', sets: 3, reps: '15-20', liftedWeight: 0, type: 'iso', searchQuery: 'Crunches' },
+                            { muscle: 'Πόδια', name: 'Leg Curls (Μηχάνημα Οπίσθιων)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Seated Leg Curl' },
+                            { muscle: 'Γλουτοί', name: 'Hip Thrusts ή Glute Bridges', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Barbell Hip Thrust' },
+                            { muscle: 'Γάμπες', name: 'Γάμπες Καθιστός', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Seated Calf Raise' },
+                            { muscle: 'Κοιλιακοί', name: 'Ροκανίσματα', sets: 3, reps: '15-20', liftedWeight: 0, type: 'iso', searchQuery: 'Crunches' },
                             { muscle: 'Cardio', name: 'Ελλειπτικό', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Elliptical Workout' }
                         ]}
                     ]
@@ -444,7 +445,7 @@
                 }
             },
             mounted() {
-                const saved = JSON.parse(localStorage.getItem('workout_4day_v2') || '{}');
+                const saved = JSON.parse(localStorage.getItem('workout_complete_v1') || '{}');
                 if (saved.weight) this.userWeight = saved.weight;
                 if (saved.height) this.userHeight = saved.height;
                 if (saved.age) this.userAge = saved.age;
@@ -467,13 +468,12 @@
             },
             methods: {
                 saveData() { 
-                    localStorage.setItem('workout_4day_v2', JSON.stringify({ 
+                    localStorage.setItem('workout_complete_v1', JSON.stringify({ 
                         weight: this.userWeight, height: this.userHeight, age: this.userAge,
                         meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime 
                     })); 
                 },
                 
-                // Timers
                 startTimer(seconds, label) {
                     this.timerLabel = label; this.timeLeft = seconds; this.timerActive = true;
                     if (this.intervalId) clearInterval(this.intervalId);
@@ -485,7 +485,6 @@
                 addTime(seconds) { this.timeLeft += seconds; },
                 stopTimer() { clearInterval(this.intervalId); this.timerActive = false; },
 
-                // Diet
                 selectFood(f) {
                     this.selectedFoodItem = f; this.searchQuery = f.name; this.showSuggestions = false;
                     this.newMeal.name = f.name; this.foodGrams = 100; this.calculateFromGrams();
@@ -510,7 +509,6 @@
                 },
                 removeMeal(i) { this.meals.splice(i, 1); this.saveData(); },
                 
-                // Workout logic with LiftedWeight factored in
                 calculateBurn(ex) {
                     let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets || 3;
                     if (ex.type === 'cardio') b = (parseInt(ex.reps || 20) * 7 * w) / 200;
@@ -519,7 +517,6 @@
                     return b.toFixed(0);
                 },
                 
-                // Fasting
                 startFasting() {
                     const [h, m] = this.lastMealTimeInput.split(':');
                     const start = new Date(); start.setHours(h, m, 0);
@@ -540,7 +537,6 @@
                     }
                 },
                 
-                // Sheets FULL SYNC
                 async syncToSheets() {
                     this.isSyncing = true;
                     const fd = new FormData();
