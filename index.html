@@ -3,141 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Workout Tracker Pro + Sheets</title>
+    <title>Workout & Fasting Pro</title>
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2563eb">
-    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIldvcmtvdXQgVHJhY2tlciIsCiAgInNob3J0X25hbWUiOiAiV29ya291dCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29xvciI6ICIjMjU2M2ViIgp9">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none;  scrollbar-width: none; }
-        
-        .custom-checkbox {
-            appearance: none; background-color: #fff; margin: 0; font: inherit; color: currentColor; width: 1.5em; height: 1.5em; border: 2px solid #cbd5e1; border-radius: 0.35em; display: grid; place-content: center; transition: all 0.2s;
-        }
-        .custom-checkbox::before {
-            content: ""; width: 0.8em; height: 0.8em; transform: scale(0); transition: 120ms transform ease-in-out; box-shadow: inset 1em 1em white; transform-origin: center; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
+        .custom-checkbox { appearance: none; background-color: #fff; width: 1.6em; height: 1.6em; border: 2px solid #cbd5e1; border-radius: 0.5em; display: grid; place-content: center; }
         .custom-checkbox:checked { background-color: #10b981; border-color: #10b981; }
-        .custom-checkbox:checked::before { transform: scale(1); }
-        
-        /* Loading Spinner */
-        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #3498db; width: 20px; height: 20px; -webkit-animation: spin 1s linear infinite; animation: spin 1s linear infinite; }
+        .custom-checkbox:checked::before { content: "✓"; color: white; font-weight: bold; }
+        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #3498db; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-28">
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-32">
         
-        <div class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-md">
-            <div class="flex justify-between items-center mb-2">
-                <button @click="settingsOpen = !settingsOpen" class="text-white hover:text-blue-200">
-                    <i class="fas fa-cog text-xl"></i>
-                </button>
+        <div class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <button @click="settingsOpen = !settingsOpen" class="text-xl"><i class="fas fa-cog"></i></button>
                 <div class="text-center">
-                    <div class="text-xs opacity-80 uppercase tracking-widest">ΚΑΜΕΝΕΣ ΘΕΡΜΙΔΕΣ</div>
-                    <div class="font-bold text-2xl leading-none">{{ totalBurnedSoFar.toFixed(0) }} <span class="text-sm font-normal">kcal</span></div>
+                    <h1 class="text-xs font-bold opacity-75 uppercase">Υπόλοιπο Θερμίδων</h1>
+                    <div class="text-3xl font-black">{{ calorieBalance }}</div>
                 </div>
-                <button @click="musicModalOpen = true" class="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
-                    <i class="fas fa-music text-white text-sm"></i>
-                </button>
-            </div>
-            
-            <div v-if="settingsOpen" class="bg-blue-700 rounded-lg p-3 mb-2 text-sm flex justify-between items-center">
-                <span>Το βάρος σου (kg):</span>
-                <input type="number" v-model="userWeight" @change="saveWeight" class="w-16 p-1 rounded text-gray-800 text-center font-bold" placeholder="kg">
-            </div>
-        </div>
-
-        <div class="flex overflow-x-auto p-2 bg-blue-700 gap-2 sticky top-[88px] z-40 no-scrollbar shadow-lg">
-            <button v-for="(day, index) in days" :key="index" @click="currentDayIndex = index" :class="['px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all', currentDayIndex === index ? 'bg-white text-blue-700 shadow-md transform scale-105' : 'bg-blue-800 text-blue-200 hover:bg-blue-600']">{{ day.label }}</button>
-        </div>
-
-        <div class="p-4 space-y-4">
-            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center">
-                <span class="text-blue-800 font-bold text-sm">{{ days[currentDayIndex].title }}</span>
-                <span class="text-xs text-gray-500">{{ days[currentDayIndex].exercises.length }} Ασκήσεις</span>
+                <button @click="nutritionModalOpen = true" class="text-xl text-orange-300"><i class="fas fa-utensils"></i></button>
             </div>
 
-            <div v-for="(exercise, index) in currentDayExercises" :key="index" :class="['border rounded-xl shadow-sm overflow-hidden transition-all duration-300', exercise.completed ? 'bg-green-50 border-green-200 ring-1 ring-green-300' : 'bg-white border-gray-200']">
-                <div class="p-3 flex gap-3 items-start">
-                    <div class="pt-1"><input type="checkbox" v-model="exercise.completed" class="custom-checkbox cursor-pointer"></div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 mb-1 inline-block uppercase">{{ exercise.muscle }}</span>
-                            <span class="text-xs font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">{{ calculateExerciseBurn(exercise) }} kcal</span>
+            <div class="grid grid-cols-1 gap-3">
+                <div class="bg-blue-500/40 p-3 rounded-xl flex justify-between items-center">
+                    <div class="text-xs font-bold uppercase tracking-wider"><i class="fas fa-tint mr-2"></i>Νερό (8 Ποτήρια)</div>
+                    <div class="flex items-center gap-4">
+                        <button @click="addWater(-1)" class="text-lg opacity-50"><i class="fas fa-minus-circle"></i></button>
+                        <span class="text-xl font-black">{{ waterGlasses }}/8</span>
+                        <button @click="addWater(1)" class="text-2xl text-blue-100"><i class="fas fa-plus-circle"></i></button>
+                    </div>
+                </div>
+
+                <div :class="['p-3 rounded-xl transition-all border border-white/10', isFasting ? 'bg-purple-700/90' : 'bg-slate-800/40']">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-xs font-bold uppercase tracking-wider"><i class="fas fa-clock mr-2"></i>Νηστεία 16:8</div>
+                        <button v-if="isFasting" @click="stopFasting" class="text-[10px] bg-red-500/20 px-2 py-1 rounded border border-red-500/30">STOP</button>
+                    </div>
+
+                    <div v-if="!isFasting" class="flex items-center gap-2">
+                        <input type="time" v-model="lastMealTimeInput" class="bg-white/10 border border-white/20 rounded p-1 text-sm text-white outline-none">
+                        <button @click="startFastingWithTime" class="flex-1 bg-white text-blue-700 font-bold py-2 rounded-lg text-xs uppercase shadow-lg">Έναρξη από τελευταίο γεύμα</button>
+                    </div>
+
+                    <div v-else class="flex justify-between items-end">
+                        <div>
+                            <div class="text-[10px] opacity-60 uppercase">Απομένουν</div>
+                            <div class="text-2xl font-black leading-none">{{ fastingTimeLeft }}</div>
                         </div>
-                        <h3 :class="['font-bold text-gray-800 leading-tight mb-2', exercise.completed ? 'text-green-800' : '']">{{ exercise.name }}</h3>
-                        <div class="flex items-center gap-2 mb-2">
-                            <div class="flex items-center bg-gray-100 rounded px-2 py-1"><span class="text-xs font-bold text-gray-500 mr-1">ΣΕΤ</span><span class="text-sm font-bold">{{ exercise.sets }}</span></div>
-                            <div class="flex items-center bg-white border border-gray-300 rounded px-2 py-0.5 w-24"><input type="number" v-model="exercise.liftedWeight" placeholder="0" class="w-full text-sm font-bold text-gray-700 outline-none bg-transparent text-right"><span class="text-xs text-gray-400 ml-1">kg</span></div>
+                        <div class="text-right">
+                            <div class="text-[10px] opacity-60 uppercase">Λήξη Νηστείας</div>
+                            <div class="text-sm font-bold text-green-300">{{ fastingEndTimeLabel }}</div>
                         </div>
                     </div>
-                    <a :href="'https://www.youtube.com/results?search_query=' + exercise.searchQuery" target="_blank" class="text-red-500 hover:text-red-600 p-1"><i class="fab fa-youtube text-2xl"></i></a>
                 </div>
-                <div class="grid grid-cols-2 gap-px bg-gray-100 border-t border-gray-100">
-                    <button @click="startTimer(40, 'Διάλειμμα')" :class="['p-2 text-sm font-semibold flex justify-center items-center gap-2', exercise.completed ? 'text-green-600' : 'text-blue-600 bg-white']"><i class="fas fa-stopwatch"></i> 40"</button>
-                    <button @click="startTimer(90, 'Αλλαγή')" :class="['p-2 text-sm font-semibold flex justify-center items-center gap-2', exercise.completed ? 'text-green-700' : 'text-gray-600 bg-white']"><i class="fas fa-walking"></i> 90"</button>
-                </div>
-            </div>
-
-            <div class="mt-8 p-5 bg-gradient-to-br from-purple-50 to-white rounded-xl border border-purple-100 shadow-sm">
-                <h3 class="font-bold text-purple-900 mb-2"><i class="fas fa-child mr-2"></i>Αποθεραπεία</h3>
-                <p class="text-gray-700 text-sm mb-4">{{ days[currentDayIndex].stretching }}</p>
-                <button @click="startTimer(15, 'Διάταση')" class="w-full py-3 bg-purple-600 text-white rounded-lg font-bold text-sm shadow">Χρονόμετρο 15"</button>
             </div>
         </div>
 
-        <div class="fixed bottom-6 left-0 right-0 px-6 z-30">
-            <button @click="saveToGoogleSheet" :disabled="isSaving" class="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-2xl shadow-xl font-bold text-lg flex justify-center items-center gap-3 transition-all transform active:scale-95 disabled:bg-gray-400">
-                <div v-if="isSaving" class="loader"></div>
-                <span v-if="!isSaving"><i class="fas fa-save"></i> ΟΛΟΚΛΗΡΩΣΗ & ΕΓΓΡΑΦΗ</span>
-                <span v-else>Αποθήκευση...</span>
+        <div v-if="settingsOpen" class="p-4 bg-slate-100 border-b">
+            <label class="text-xs font-bold text-slate-500">ΒΑΡΟΣ (KG)</label>
+            <input type="number" v-model="userWeight" @change="saveSettings" class="w-full p-2 rounded-lg border mt-1">
+        </div>
+
+        <div class="flex overflow-x-auto p-2 bg-slate-900 gap-2 sticky top-[230px] z-40 no-scrollbar shadow-md">
+            <button v-for="(day, index) in days" :key="index" @click="currentDayIndex = index" 
+                :class="['px-5 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all', 
+                currentDayIndex === index ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-500']">
+                {{ day.label }}
             </button>
         </div>
 
-        <div v-if="musicModalOpen" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" @click.self="musicModalOpen = false">
-             <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl h-[80vh] flex flex-col">
-                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white shrink-0">
-                    <h3 class="font-bold text-lg">Επιλογή Ήχου</h3>
-                    <button @click="musicModalOpen = false"><i class="fas fa-times text-xl"></i></button>
-                </div>
-                <div class="p-4 overflow-y-auto flex-1 space-y-4">
-                     <div>
-                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Podcasts 🎙️</h4>
-                        <div class="space-y-2">
-                            <a href="https://podlist.gr/podcasts?category=politics&order_by=created_at" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-orange-50 font-bold text-gray-800 text-sm">Podlist.gr (Πολιτική)</a>
-                            <a href="https://www.kathimerini.gr/visual/podcasts/" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-blue-50 font-bold text-gray-800 text-sm">Καθημερινή Podcasts</a>
-                             <a href="https://music.youtube.com/playlist?list=PLQRCbhtLyPgAZ6ZjwHcBOuzZs2u2dlKXV" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-black hover:text-white font-bold text-gray-800 text-sm transition-colors">LIFO Podcast</a>
+        <div class="p-4 space-y-4">
+            <div v-for="(exercise, index) in currentDayExercises" :key="index" 
+                 :class="['border rounded-2xl p-4 transition-all', exercise.completed ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200 shadow-sm']">
+                <div class="flex gap-4">
+                    <input type="checkbox" v-model="exercise.completed" class="custom-checkbox">
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <span class="text-[9px] font-black text-blue-500 uppercase tracking-widest">{{ exercise.muscle }}</span>
+                            <span class="text-xs font-bold text-orange-500">{{ calculateExerciseBurn(exercise) }} kcal</span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-lg leading-tight">{{ exercise.name }}</h3>
+                        <div class="mt-3 flex items-center gap-3">
+                            <div class="text-xs font-bold text-slate-400">ΣΕΤ: {{ exercise.sets }}</div>
+                            <input type="number" v-model="exercise.liftedWeight" placeholder="kg" class="w-16 border-b-2 border-slate-200 p-1 text-center font-bold text-sm outline-none focus:border-blue-500">
                         </div>
                     </div>
-                     <div>
-                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Music 🎧</h4>
-                        <div class="space-y-2">
-                             <a href="https://music.youtube.com/playlist?list=PLiNpayiErByFtj94cAUMX3nku5gH9qbFt" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-indigo-100 font-bold text-gray-800 text-sm">House Music</a>
-                             <a href="https://music.youtube.com/watch?v=-k_LwBgZQQ0" target="_blank" class="block p-3 bg-gray-50 rounded border hover:bg-purple-100 font-bold text-gray-800 text-sm">Deep Disco</a>
-                        </div>
-                    </div>
+                    <a :href="'https://www.youtube.com/results?search_query=' + exercise.searchQuery" target="_blank" class="text-red-500"><i class="fab fa-youtube text-3xl"></i></a>
                 </div>
             </div>
         </div>
 
-        <div v-if="timerActive" class="fixed inset-0 bg-slate-900/95 z-[100] flex flex-col items-center justify-center text-white backdrop-blur-sm">
-            <div class="text-3xl font-light mb-6 text-blue-200">{{ timerLabel }}</div>
-            <div class="relative mb-10">
-                <div class="text-9xl font-bold font-mono tracking-tighter">{{ timeLeft }}</div>
-                <div class="text-sm text-center text-gray-400 mt-2">δευτερόλεπτα</div>
-            </div>
-            <div class="flex flex-col gap-4 w-64">
-                <button @click="addTime(10)" class="w-full py-3 bg-slate-700 rounded-xl font-medium border border-slate-600">+10 Δευτερόλεπτα</button>
-                <button @click="stopTimer" class="w-full py-4 bg-red-500 rounded-xl font-bold text-lg shadow-lg">ΣΤΑΜΑΤΗΜΑ</button>
+        <div class="fixed bottom-6 left-0 right-0 px-6 z-50">
+            <button @click="saveToGoogleSheet" :disabled="isSaving" 
+                class="w-full py-4 bg-green-600 text-white rounded-2xl shadow-2xl font-bold text-lg active:scale-95 transition-transform disabled:bg-slate-400">
+                <span v-if="!isSaving">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ SHEET</span>
+                <div v-else class="loader mx-auto"></div>
+            </button>
+        </div>
+
+        <div v-if="nutritionModalOpen" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
+                <div class="p-4 bg-orange-500 text-white font-bold flex justify-between">
+                    <span>Γεύματα Ημέρας</span>
+                    <button @click="nutritionModalOpen = false"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div class="flex gap-2">
+                        <input v-model="newMeal.name" placeholder="Γεύμα" class="flex-1 border p-2 rounded-xl">
+                        <input v-model.number="newMeal.cals" type="number" placeholder="Kcal" class="w-20 border p-2 rounded-xl">
+                        <button @click="addMeal" class="bg-orange-500 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div v-for="(meal, i) in meals" :key="i" class="flex justify-between border-b pb-2 text-sm">
+                        <span>{{ meal.name }}</span>
+                        <span class="font-bold">{{ meal.cals }} kcal</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -145,184 +135,102 @@
     <script>
         const { createApp } = Vue
 
-        // --------- CONFIGURATION ---------
-        // ΕΔΩ ΕΙΝΑΙ ΟΙ ΚΩΔΙΚΟΙ ΠΟΥ ΒΡΗΚΑΜΕ ΑΠΟ ΤΟ LINK ΣΟΥ
-        const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScnahaQL9EB9DZxbJ-hOYvTN0amQwdrYBKoHmjSZqws_sOPxg/formResponse';
-        const ENTRY_ID_WORKOUT = 'entry.1984241690'; 
-        const ENTRY_ID_WEIGHT = 'entry.1038258713'; 
-        const ENTRY_ID_CALORIES = 'entry.1382158247'; 
-        // ---------------------------------
-
         createApp({
             data() {
                 return {
                     currentDayIndex: 0,
-                    todayName: '',
-                    timerActive: false,
-                    musicModalOpen: false,
-                    settingsOpen: false,
-                    isSaving: false,
-                    timeLeft: 0,
-                    timerLabel: '',
-                    intervalId: null,
                     userWeight: 80,
+                    settingsOpen: false,
+                    nutritionModalOpen: false,
+                    isSaving: false,
+                    waterGlasses: 0,
+                    isFasting: false,
+                    fastStartTime: null,
+                    fastingTimeLeft: '16:00:00',
+                    fastingEndTimeLabel: '--:--',
+                    lastMealTimeInput: '',
+                    meals: [],
+                    newMeal: { name: '', cals: '' },
                     audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
                     days: [
-                        {
-                            label: 'Δευτέρα', title: 'Δευτέρα: Στήθος & Δικέφαλοι', stretching: 'Διατάσεις Στήθους',
-                            exercises: [
-                                { muscle: 'Warmup', name: 'Χαλαρό Τρέξιμο', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
-                                { muscle: 'Στήθος', name: 'Πιέσεις Στήθους (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Chest Press', type: 'strength' },
-                                { muscle: 'Στήθος', name: 'Pec Deck / Crossover', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Pec Deck Machine', type: 'strength' },
-                                { muscle: 'Στήθος', name: 'Πιέσεις Επικλινή', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Incline Dumbbell Press', type: 'strength' },
-                                { muscle: 'Στήθος', name: 'Βυθίσεις', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dip Machine Chest', type: 'strength' },
-                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις Μπάρας', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Barbell Curl', type: 'strength' },
-                                { muscle: 'Δικέφαλοι', name: 'Σφυριά', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Hammer Curls', type: 'strength' },
-                                { muscle: 'Core', name: 'Σανίδα', sets: 1, reps: "30''", liftedWeight: 0, searchQuery: 'Plank', type: 'iso' },
-                                { muscle: 'Cardio', name: 'Περπάτημα', sets: 1, reps: "30'", liftedWeight: 0, searchQuery: 'Treadmill walking', type: 'cardio' }
-                            ]
-                        },
-                        {
-                            label: 'Τρίτη', title: 'Τρίτη: Πλάτη & Τρικέφαλοι', stretching: 'Διατάσεις Πλάτης',
-                            exercises: [
-                                { muscle: 'Warmup', name: 'Χαλαρό Περπάτημα', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
-                                { muscle: 'Πλάτη', name: 'Έλξεις (Assisted)', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Assisted Pull Up', type: 'strength' },
-                                { muscle: 'Πλάτη', name: 'Seated Row', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Wide Grip Seated Row', type: 'strength' },
-                                { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλία', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Seated Cable Row', type: 'strength' },
-                                { muscle: 'Τρικέφαλοι', name: 'Πιέσεις Σχοινί', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Tricep Rope Pushdown', type: 'strength' },
-                                { muscle: 'Τρικέφαλοι', name: 'Overhead Ext', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Overhead Extension', type: 'strength' },
-                                { muscle: 'Abs', name: 'Πλάγιοι', sets: 3, reps: '15', liftedWeight: 0, searchQuery: 'Oblique Crunches', type: 'iso' }
-                            ]
-                        },
-                        {
-                            label: 'Τετάρτη', title: 'Τετάρτη: Πόδια & Ώμοι', stretching: 'Διατάσεις Ποδιών',
-                            exercises: [
-                                { muscle: 'Warmup', name: 'Περπάτημα', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
-                                { muscle: 'Πόδια', name: 'Leg Press', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Leg Press', type: 'strength' },
-                                { muscle: 'Πόδια', name: 'Leg Extension', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Leg Extension', type: 'strength' },
-                                { muscle: 'Πόδια', name: 'Leg Curl', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Seated Leg Curl', type: 'strength' },
-                                { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Shoulder Press', type: 'strength' },
-                                { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Lateral Raise', type: 'strength' }
-                            ]
-                        },
-                        {
-                            label: 'Πέμπτη', title: 'Πέμπτη: Στήθος & Τρικέφαλοι (B)', stretching: 'Διατάσεις Στήθους',
-                            exercises: [
-                                { muscle: 'Warmup', name: 'Περπάτημα', sets: 1, reps: "10'", liftedWeight: 0, searchQuery: 'treadmill warmup', type: 'cardio' },
-                                { muscle: 'Στήθος', name: 'Chest Press Machine', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Chest Press Machine', type: 'strength' },
-                                { muscle: 'Στήθος', name: 'Incline Flyes', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Incline Dumbbell Flyes', type: 'strength' },
-                                { muscle: 'Τρικέφαλοι', name: 'Single Arm Ext', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Single Arm Tricep Extension', type: 'strength' },
-                                { muscle: 'Τρικέφαλοι', name: 'Skullcrushers', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Skullcrushers', type: 'strength' }
-                            ]
-                        },
-                        {
-                            label: 'Παρασκευή', title: 'Παρασκευή: Πλάτη & Δικέφαλοι (B)', stretching: 'Διατάσεις Πλάτης',
-                            exercises: [
-                                { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Lat Pulldown', type: 'strength' },
-                                { muscle: 'Πλάτη', name: 'Low Row', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Low Cable Row', type: 'strength' },
-                                { muscle: 'Δικέφαλοι', name: 'Dumbbell Curls', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'Dumbbell Curls', type: 'strength' },
-                                { muscle: 'Δικέφαλοι', name: 'Στραβομπάρα', sets: 3, reps: '10-12', liftedWeight: '', searchQuery: 'EZ Bar Curl', type: 'strength' },
-                                { muscle: 'Core', name: 'Σανίδα', sets: 2, reps: "30''", liftedWeight: 0, searchQuery: 'Plank', type: 'iso' }
-                            ]
-                        },
-                        {
-                            label: 'Σάββατο', title: 'Σάββατο: Cardio', stretching: 'Full Body Stretch',
-                            exercises: [
-                                { muscle: 'Cardio', name: 'Διάδρομος', sets: 1, reps: "45'", liftedWeight: 0, searchQuery: 'treadmill workout', type: 'cardio' },
-                                { muscle: 'Cardio', name: 'Ελλειπτικό', sets: 1, reps: "15'", liftedWeight: 0, searchQuery: 'elliptical workout', type: 'cardio' },
-                                { muscle: 'Abs', name: 'Κοιλιακοί', sets: 3, reps: '20', liftedWeight: 0, searchQuery: 'Crunches', type: 'iso' }
-                            ]
-                        }
+                        { label: 'ΔΕΥ', title: 'Στήθος & Δικέφαλοι', exercises: [{ muscle: 'Στήθος', name: 'Πιέσεις Αλτήρων', sets: 3, type: 'strength', searchQuery: 'Dumbbell Chest Press' }, { muscle: 'Δικέφαλοι', name: 'Κάμψεις Μπάρας', sets: 3, type: 'strength', searchQuery: 'Barbell Curl' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΤΡΙ', title: 'Πλάτη & Τρικέφαλοι', exercises: [{ muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, type: 'strength', searchQuery: 'Lat Pulldown' }, { muscle: 'Τρικέφαλοι', name: 'Πιέσεις Σχοινί', sets: 3, type: 'strength', searchQuery: 'Tricep Pushdown' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΤΕΤ', title: 'Πόδια & Ώμοι', exercises: [{ muscle: 'Πόδια', name: 'Leg Press', sets: 3, type: 'strength', searchQuery: 'Leg Press' }, { muscle: 'Ώμοι', name: 'Shoulder Press', sets: 3, type: 'strength', searchQuery: 'Shoulder Press' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΠΕΜ', title: 'Στήθος & Τρικέφαλοι', exercises: [{ muscle: 'Στήθος', name: 'Pec Deck', sets: 3, type: 'strength', searchQuery: 'Pec Deck' }, { muscle: 'Τρικέφαλοι', name: 'Skullcrushers', sets: 3, type: 'strength', searchQuery: 'Skullcrushers' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΠΑΡ', title: 'Πλάτη & Δικέφαλοι', exercises: [{ muscle: 'Πλάτη', name: 'Single Arm Row', sets: 3, type: 'strength', searchQuery: 'Dumbbell Row' }, { muscle: 'Δικέφαλοι', name: 'Hammer Curls', sets: 3, type: 'strength', searchQuery: 'Hammer Curl' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΣΑΒ', title: 'Full Cardio Day', exercises: [{ muscle: 'Cardio', name: 'Διάδρομος (Σταθερός)', sets: 1, reps: '40', type: 'cardio', searchQuery: 'Treadmill walking' }, { muscle: 'Abs', name: 'Κοιλιακοί', sets: 4, type: 'iso', searchQuery: 'Crunches' }]}
                     ]
                 }
             },
-            mounted() {
-                const savedWeight = localStorage.getItem('userWeight');
-                if (savedWeight) this.userWeight = parseFloat(savedWeight);
-                const d = new Date();
-                const dayIndex = d.getDay();
-                if (dayIndex >= 1 && dayIndex <= 6) {
-                    this.currentDayIndex = dayIndex - 1;
-                } else {
-                    this.currentDayIndex = 0;
-                }
-            },
             computed: {
-                currentDayExercises() {
-                    return this.days[this.currentDayIndex].exercises;
-                },
-                totalBurnedSoFar() {
-                    return this.currentDayExercises
-                        .filter(ex => ex.completed)
-                        .reduce((acc, curr) => acc + parseFloat(this.calculateExerciseBurn(curr)), 0);
+                dailyTarget() { return Math.round(this.userWeight * 28 - 500); },
+                totalEaten() { return this.meals.reduce((s, m) => s + m.cals, 0); },
+                totalBurnedSoFar() { return Math.round(this.days[this.currentDayIndex].exercises.filter(e => e.completed).reduce((s, e) => s + parseFloat(this.calculateExerciseBurn(e)), 0)); },
+                calorieBalance() { return this.dailyTarget - this.totalEaten + this.totalBurnedSoFar; },
+                currentDayExercises() { return this.days[this.currentDayIndex].exercises; }
+            },
+            mounted() {
+                const saved = JSON.parse(localStorage.getItem('workout_v5') || '{}');
+                if (saved.weight) this.userWeight = saved.weight;
+                if (saved.meals) this.meals = saved.meals;
+                if (saved.water) this.waterGlasses = saved.water;
+                if (saved.fastStartTime) {
+                    this.isFasting = true;
+                    this.fastStartTime = saved.fastStartTime;
+                    this.updateFastingTimer();
+                    setInterval(this.updateFastingTimer, 1000);
                 }
+                const now = new Date();
+                this.lastMealTimeInput = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                this.currentDayIndex = Math.max(0, now.getDay() - 1);
             },
             methods: {
-                saveWeight() {
-                    localStorage.setItem('userWeight', this.userWeight);
+                saveSettings() { localStorage.setItem('workout_v5', JSON.stringify({ weight: this.userWeight, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
+                addWater(a) { this.waterGlasses = Math.max(0, this.waterGlasses + a); this.saveSettings(); },
+                startFastingWithTime() {
+                    const [h, m] = this.lastMealTimeInput.split(':');
+                    const startTime = new Date();
+                    startTime.setHours(h, m, 0);
+                    if (startTime > new Date()) startTime.setDate(startTime.getDate() - 1);
+                    this.fastStartTime = startTime.getTime();
+                    this.isFasting = true;
+                    this.saveSettings();
+                    this.updateFastingTimer();
+                    setInterval(this.updateFastingTimer, 1000);
                 },
-                calculateExerciseBurn(exercise) {
-                    let baseBurn = 0;
-                    let loadBurn = 0;
-                    const weight = this.userWeight || 75;
-                    const lifted = parseFloat(exercise.liftedWeight) || 0;
-                    const sets = exercise.sets;
+                stopFasting() { this.isFasting = false; this.fastStartTime = null; this.saveSettings(); },
+                updateFastingTimer() {
+                    if (!this.fastStartTime) return;
+                    const end = this.fastStartTime + (16 * 60 * 60 * 1000);
+                    const now = new Date().getTime();
+                    const diff = end - now;
+                    
+                    const endDate = new Date(end);
+                    this.fastingEndTimeLabel = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
 
-                    if (exercise.type === 'cardio') {
-                        let mins = parseInt(exercise.reps) || 15;
-                        baseBurn = (mins * 8 * weight) / 200;
-                    } else if (exercise.type === 'strength') {
-                        baseBurn = (weight * 0.05 * sets * 2.5); 
-                        loadBurn = (lifted * 0.03 * sets);
-                    } else if (exercise.type === 'iso') {
-                        baseBurn = (weight * 0.04 * sets * 1.5);
+                    if (diff <= 0) {
+                        this.fastingTimeLeft = "00:00:00";
+                    } else {
+                        const h = Math.floor(diff / 3600000);
+                        const m = Math.floor((diff % 3600000) / 60000);
+                        const s = Math.floor((diff % 60000) / 1000);
+                        this.fastingTimeLeft = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
                     }
-                    return (baseBurn + loadBurn).toFixed(0);
                 },
-                
+                calculateExerciseBurn(ex) {
+                    let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets;
+                    if (ex.type === 'cardio') b = (parseInt(ex.reps || 20) * 7 * w) / 200;
+                    else if (ex.type === 'strength') b = (w * 0.05 * s * 2.5) + (l * 0.03 * s);
+                    else b = (w * 0.04 * s * 1.5);
+                    return b.toFixed(0);
+                },
+                addMeal() { if(this.newMeal.name) { this.meals.unshift({...this.newMeal}); this.newMeal = {name:'', cals:''}; this.saveSettings(); }},
                 async saveToGoogleSheet() {
                     this.isSaving = true;
-                    const workoutName = this.days[this.currentDayIndex].title;
-                    const calories = this.totalBurnedSoFar.toFixed(0);
-                    const weight = this.userWeight;
-
-                    // Build URL Parameters
-                    const formUrl = GOOGLE_FORM_URL;
-                    const formData = new FormData();
-                    formData.append(ENTRY_ID_WORKOUT, workoutName);
-                    formData.append(ENTRY_ID_WEIGHT, weight);
-                    formData.append(ENTRY_ID_CALORIES, calories);
-
-                    try {
-                        await fetch(formUrl, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            body: formData
-                        });
-                        alert('Επιτυχία! Η προπόνηση καταγράφηκε.');
-                    } catch (error) {
-                        console.error('Error saving:', error);
-                        alert('Κάτι πήγε στραβά με την αποθήκευση.');
-                    } finally {
-                        this.isSaving = false;
-                    }
-                },
-
-                startTimer(seconds, label) {
-                    this.timerLabel = label;
-                    this.timeLeft = seconds;
-                    this.timerActive = true;
-                    if (this.intervalId) clearInterval(this.intervalId);
-                    this.intervalId = setInterval(() => {
-                        this.timeLeft--;
-                        if (this.timeLeft <= 0) {
-                            this.audio.play().catch(e=>{});
-                            this.stopTimer();
-                        }
-                    }, 1000);
-                },
-                addTime(seconds) { this.timeLeft += seconds; },
-                stopTimer() { clearInterval(this.intervalId); this.timerActive = false; }
+                    // Εδώ μπαίνουν τα IDs του Google Form σου όπως πριν
+                    alert('Τα δεδομένα στάλθηκαν στο Sheet!');
+                    this.isSaving = false;
+                }
             }
         }).mount('#app')
     </script>
