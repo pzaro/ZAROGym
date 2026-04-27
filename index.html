@@ -29,8 +29,10 @@
         
         <div class="bg-slate-900 p-4 sticky top-0 z-50 border-b border-slate-800 shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <div @click="settingsOpen = !settingsOpen">
-                    <h1 class="text-xl font-black text-blue-500 uppercase tracking-tighter">Fitness Hub</h1>
+                <div @click="settingsOpen = !settingsOpen" class="cursor-pointer">
+                    <h1 class="text-xl font-black text-blue-500 uppercase tracking-tighter flex items-center gap-2">
+                        <i class="fas fa-sliders-h text-sm"></i> Fitness Hub
+                    </h1>
                     <p class="text-[10px] text-slate-400">Mode: Fat Loss & Cutting</p>
                 </div>
                 <div class="text-right">
@@ -59,16 +61,37 @@
             </div>
         </div>
 
-        <div v-if="settingsOpen" class="p-4 bg-slate-800 border-b border-slate-700 animate-fade-in">
-            <div class="flex justify-between items-center">
-                <span class="text-sm font-bold">Βάρος Σώματος (kg):</span>
-                <input type="number" v-model="userWeight" @change="saveData" class="w-20 bg-slate-900 border border-slate-600 rounded p-1 text-center font-bold">
+        <div v-if="settingsOpen" class="p-4 bg-slate-800 border-b border-slate-700 animate-fade-in space-y-4">
+            <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest border-b border-slate-700 pb-2">Σωματικα Δεδομενα</h3>
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase block mb-1">Βαρος (kg)</label>
+                    <input type="number" v-model.number="userWeight" @change="saveData" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-bold text-white">
+                </div>
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase block mb-1">Υψος (cm)</label>
+                    <input type="number" v-model.number="userHeight" @change="saveData" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-bold text-white">
+                </div>
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase block mb-1">Ηλικια (y)</label>
+                    <input type="number" v-model.number="userAge" @change="saveData" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-bold text-white">
+                </div>
+            </div>
+            
+            <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 flex justify-between items-center">
+                <div>
+                    <div class="text-[10px] opacity-50 uppercase">Δεικτης Μαζας Σωματος (BMI)</div>
+                    <div class="text-lg font-black" :class="bmiColorClass">{{ calculatedBMI }}</div>
+                </div>
+                <div class="text-xs font-bold px-3 py-1 rounded-full bg-slate-800" :class="bmiColorClass">
+                    {{ bmiStatus }}
+                </div>
             </div>
         </div>
 
         <div class="flex justify-around bg-slate-900 border-b border-slate-800 sticky top-[145px] z-40">
             <button v-for="tab in ['Gym', 'Diet', 'Fasting']" :key="tab" 
-                    @click="activeTab = tab" 
+                    @click="activeTab = tab; settingsOpen = false;" 
                     :class="['p-3 text-xs font-black uppercase tracking-widest transition-all w-full', activeTab === tab ? 'tab-active' : 'text-slate-500']">
                 {{ tab }}
             </button>
@@ -107,7 +130,7 @@
                 <div class="card p-4 border-l-4 border-purple-500 bg-purple-900/10">
                     <h4 class="text-xs font-bold text-purple-400 uppercase mb-2"><i class="fas fa-magic mr-2"></i>Αποθεραπεία & Αναρρωση</h4>
                     <p class="text-[11px] text-slate-300">{{ days[currentDayIndex].stretching }}</p>
-                    <p class="text-[10px] text-slate-500 mt-2 italic">* Χρήση Zplast Total Repair Cream (Centella, Μαστίχα, Ιπποφαές) στις μυϊκές ομάδες που καταπονήθηκαν.</p>
+                    <p class="text-[10px] text-slate-500 mt-2 italic">* Χρήση Zplast Total Repair Cream (Centella, Μαστίχα, Ιπποφαές) στις μυϊκές ομάδες που καταπονήθηκαν για γρηγορότερη αποκατάσταση.</p>
                 </div>
             </div>
         </div>
@@ -230,7 +253,6 @@
     <script>
         const { createApp } = Vue
 
-        // PRE-CONFIGURED IDs FOR GOOGLE SHEETS
         const CONFIG = {
             FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLScnahaQL9EB9DZxbJ-hOYvTN0amQwdrYBKoHmjSZqws_sOPxg/formResponse',
             ID_WORKOUT: 'entry.1984241690',
@@ -238,7 +260,6 @@
             ID_CALS: 'entry.1382158247'
         };
 
-        // LOCAL FOOD DATABASE (per 100g)
         const FOOD_DATABASE = [
             { name: 'Στήθος Κοτόπουλο (Ψητό)', cals: 165, protein: 31 },
             { name: 'Ρύζι Λευκό (Βρασμένο)', cals: 130, protein: 2.7 },
@@ -273,7 +294,12 @@
                 return {
                     activeTab: 'Gym',
                     currentDayIndex: 0,
+                    
+                    // User Data
                     userWeight: 80,
+                    userHeight: 180,
+                    userAge: 30,
+                    
                     waterGlasses: 0,
                     
                     // Fasting
@@ -310,7 +336,33 @@
                 }
             },
             computed: {
-                calorieTarget() { return Math.round(this.userWeight * 28 - 500); },
+                // Υπολογισμός BMI
+                calculatedBMI() {
+                    if(!this.userHeight || !this.userWeight) return 0;
+                    const heightInMeters = this.userHeight / 100;
+                    return (this.userWeight / (heightInMeters * heightInMeters)).toFixed(1);
+                },
+                bmiStatus() {
+                    const bmi = this.calculatedBMI;
+                    if(bmi < 18.5) return 'Λιποβαρής';
+                    if(bmi >= 18.5 && bmi < 25) return 'Κανονικό';
+                    if(bmi >= 25 && bmi < 30) return 'Υπέρβαρος';
+                    return 'Παχύσαρκος';
+                },
+                bmiColorClass() {
+                    const bmi = this.calculatedBMI;
+                    if(bmi >= 18.5 && bmi < 25) return 'text-green-400';
+                    if(bmi >= 25 && bmi < 30) return 'text-orange-400';
+                    return 'text-red-400';
+                },
+
+                // Mifflin-St Jeor Equation για ακριβή BMR + Έλλειμμα 500
+                calorieTarget() { 
+                    const bmr = (10 * this.userWeight) + (6.25 * this.userHeight) - (5 * this.userAge) + 5;
+                    const tdee = bmr * 1.2; // Sedentary (εφόσον τις προπονήσεις τις προσθέτουμε χωριστά)
+                    return Math.round(tdee - 500); // -500 kcal για cutting
+                },
+                
                 proteinTarget() { return Math.round(this.userWeight * 2); },
                 totalEaten() { return this.meals.reduce((s, m) => s + m.cals, 0); },
                 totalProtein() { return this.meals.reduce((s, m) => s + (m.protein || 0), 0); },
@@ -318,7 +370,6 @@
                 calorieBalance() { return this.calorieTarget - this.totalEaten + this.totalBurnedSoFar; },
                 currentDayExercises() { return this.days[this.currentDayIndex].exercises; },
                 
-                // Φίλτρο αναζήτησης τροφίμων
                 filteredFoods() {
                     if (!this.searchQuery) return [];
                     const q = this.searchQuery.toLowerCase();
@@ -326,21 +377,24 @@
                 }
             },
             mounted() {
-                const saved = JSON.parse(localStorage.getItem('workout_cutting_v2') || '{}');
+                const saved = JSON.parse(localStorage.getItem('workout_bmi_v1') || '{}');
                 if (saved.weight) this.userWeight = saved.weight;
+                if (saved.height) this.userHeight = saved.height;
+                if (saved.age) this.userAge = saved.age;
                 if (saved.meals) this.meals = saved.meals;
                 if (saved.water) this.waterGlasses = saved.water;
+                
                 if (saved.fastStartTime) {
                     this.isFasting = true;
                     this.fastStartTime = saved.fastStartTime;
                     this.updateFastingTimer();
                     setInterval(this.updateFastingTimer, 1000);
                 }
+                
                 const now = new Date();
                 this.lastMealTimeInput = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                 this.currentDayIndex = Math.max(0, now.getDay() - 1);
 
-                // Κλείσιμο dropdown όταν κάνεις κλικ αλλού
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.relative')) {
                         this.showSuggestions = false;
@@ -348,15 +402,23 @@
                 });
             },
             methods: {
-                saveData() { localStorage.setItem('workout_cutting_v2', JSON.stringify({ weight: this.userWeight, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
+                saveData() { 
+                    localStorage.setItem('workout_bmi_v1', JSON.stringify({ 
+                        weight: this.userWeight, 
+                        height: this.userHeight, 
+                        age: this.userAge,
+                        meals: this.meals, 
+                        water: this.waterGlasses, 
+                        fastStartTime: this.fastStartTime 
+                    })); 
+                },
                 
-                // Meal Smart Input Methods
                 selectFood(food) {
                     this.selectedFoodItem = food;
                     this.searchQuery = food.name;
                     this.showSuggestions = false;
                     this.newMeal.name = food.name;
-                    this.foodGrams = 100; // Default 100g
+                    this.foodGrams = 100;
                     this.calculateFromGrams();
                 },
                 calculateFromGrams() {
@@ -366,7 +428,6 @@
                     this.newMeal.protein = Math.round(this.selectedFoodItem.protein * factor * 10) / 10;
                 },
                 addMeal() { 
-                    // Αν πληκτρολόγησε κάτι δικό του που δεν είναι στη βάση (έχει κενό name)
                     if(!this.newMeal.name && this.searchQuery) this.newMeal.name = this.searchQuery;
 
                     if(this.newMeal.name && this.newMeal.cals) { 
@@ -377,7 +438,6 @@
                             protein: this.newMeal.protein || 0,
                             time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
                         }); 
-                        // Reset forms
                         this.newMeal = {name:'', cals:'', protein:''}; 
                         this.searchQuery = '';
                         this.selectedFoodItem = null;
@@ -387,7 +447,6 @@
                 },
                 removeMeal(i) { this.meals.splice(i, 1); this.saveData(); },
                 
-                // Workout & Fasting
                 calculateBurn(ex) {
                     let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets || 3;
                     if (ex.type === 'cardio') b = (parseInt(ex.reps || 20) * 7 * w) / 200;
