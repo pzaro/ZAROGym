@@ -3,146 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Workout & Fasting Pro</title>
+    <title>Master Hub - Panos Z.</title>
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#1e40af">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .custom-checkbox { appearance: none; background-color: #fff; width: 1.6em; height: 1.6em; border: 2px solid #cbd5e1; border-radius: 0.5em; display: grid; place-content: center; }
-        .custom-checkbox:checked { background-color: #10b981; border-color: #10b981; }
+        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+        .custom-checkbox { appearance: none; background: #334155; width: 1.5em; height: 1.5em; border-radius: 0.4em; display: grid; place-content: center; transition: 0.2s; }
+        .custom-checkbox:checked { background: #10b981; }
         .custom-checkbox:checked::before { content: "✓"; color: white; font-weight: bold; }
-        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #3498db; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader { border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-32">
+    <div id="app" class="max-w-md mx-auto min-h-screen relative pb-32">
         
-        <div class="bg-blue-600 text-white p-4 sticky top-0 z-50 shadow-lg">
+        <div class="bg-slate-900 p-4 sticky top-0 z-50 border-b border-slate-800 shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <button @click="settingsOpen = !settingsOpen" class="text-xl"><i class="fas fa-cog"></i></button>
-                <div class="text-center">
-                    <h1 class="text-xs font-bold opacity-75 uppercase">Υπόλοιπο Θερμίδων</h1>
-                    <div class="text-3xl font-black">{{ calorieBalance }}</div>
+                <div @click="settingsOpen = !settingsOpen">
+                    <h1 class="text-xl font-black text-blue-500 uppercase tracking-tighter">Master Hub</h1>
+                    <p class="text-[10px] text-slate-400">Target: Cutting / 16:8 Fasting</p>
                 </div>
-                <button @click="nutritionModalOpen = true" class="text-xl text-orange-300"><i class="fas fa-utensils"></i></button>
+                <div class="text-right">
+                    <div class="text-xs opacity-50 uppercase">Υπόλοιπο</div>
+                    <div :class="['text-2xl font-black', calorieBalance < 0 ? 'text-red-400' : 'text-green-400']">{{ calorieBalance }} <span class="text-xs">kcal</span></div>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-3">
-                <div class="bg-blue-500/40 p-3 rounded-xl flex justify-between items-center">
-                    <div class="text-xs font-bold uppercase tracking-wider"><i class="fas fa-tint mr-2"></i>Νερό (8 Ποτήρια)</div>
-                    <div class="flex items-center gap-4">
-                        <button @click="addWater(-1)" class="text-lg opacity-50"><i class="fas fa-minus-circle"></i></button>
-                        <span class="text-xl font-black">{{ waterGlasses }}/8</span>
-                        <button @click="addWater(1)" class="text-2xl text-blue-100"><i class="fas fa-plus-circle"></i></button>
-                    </div>
+            <div class="grid grid-cols-4 gap-2 text-[10px] font-bold text-center uppercase tracking-tighter">
+                <div class="bg-slate-800 p-2 rounded-lg border-b-2 border-orange-500">
+                    <div class="opacity-50">Protein</div>
+                    <div>{{ totalProtein }}/{{ proteinTarget }}g</div>
                 </div>
-
-                <div :class="['p-3 rounded-xl transition-all border border-white/10', isFasting ? 'bg-purple-700/90' : 'bg-slate-800/40']">
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="text-xs font-bold uppercase tracking-wider"><i class="fas fa-clock mr-2"></i>Νηστεία 16:8</div>
-                        <button v-if="isFasting" @click="stopFasting" class="text-[10px] bg-red-500/20 px-2 py-1 rounded border border-red-500/30">STOP</button>
-                    </div>
-
-                    <div v-if="!isFasting" class="flex items-center gap-2">
-                        <input type="time" v-model="lastMealTimeInput" class="bg-white/10 border border-white/20 rounded p-1 text-sm text-white outline-none">
-                        <button @click="startFastingWithTime" class="flex-1 bg-white text-blue-700 font-bold py-2 rounded-lg text-xs uppercase shadow-lg">Έναρξη από τελευταίο γεύμα</button>
-                    </div>
-
-                    <div v-else class="flex justify-between items-end">
-                        <div>
-                            <div class="text-[10px] opacity-60 uppercase">Απομένουν</div>
-                            <div class="text-2xl font-black leading-none">{{ fastingTimeLeft }}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-[10px] opacity-60 uppercase">Λήξη Νηστείας</div>
-                            <div class="text-sm font-bold text-green-300">{{ fastingEndTimeLabel }}</div>
-                        </div>
-                    </div>
+                <div class="bg-slate-800 p-2 rounded-lg border-b-2 border-blue-400">
+                    <div class="opacity-50">Water</div>
+                    <div>{{ waterGlasses }}/8 💧</div>
+                </div>
+                <div class="bg-slate-800 p-2 rounded-lg border-b-2 border-purple-500">
+                    <div class="opacity-50">Fasting</div>
+                    <div>{{ isFasting ? fastingTimeLeft : 'OFF' }}</div>
+                </div>
+                <div class="bg-slate-800 p-2 rounded-lg border-b-2 border-green-500">
+                    <div class="opacity-50">Burned</div>
+                    <div>{{ totalBurnedSoFar }}</div>
                 </div>
             </div>
         </div>
 
-        <div v-if="settingsOpen" class="p-4 bg-slate-100 border-b">
-            <label class="text-xs font-bold text-slate-500">ΒΑΡΟΣ (KG)</label>
-            <input type="number" v-model="userWeight" @change="saveSettings" class="w-full p-2 rounded-lg border mt-1">
+        <div v-if="settingsOpen" class="p-4 bg-slate-800 border-b border-slate-700 animate-fade-in">
+            <div class="flex justify-between items-center">
+                <span class="text-sm font-bold">Βάρος Σώματος (kg):</span>
+                <input type="number" v-model="userWeight" @change="saveData" class="w-20 bg-slate-900 border border-slate-600 rounded p-1 text-center font-bold">
+            </div>
         </div>
 
-        <div class="flex overflow-x-auto p-2 bg-slate-900 gap-2 sticky top-[230px] z-40 no-scrollbar shadow-md">
-            <button v-for="(day, index) in days" :key="index" @click="currentDayIndex = index" 
-                :class="['px-5 py-2 rounded-full whitespace-nowrap text-xs font-black transition-all', 
-                currentDayIndex === index ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-500']">
-                {{ day.label }}
+        <div class="flex justify-around bg-slate-900 border-b border-slate-800 sticky top-[145px] z-40">
+            <button v-for="tab in ['Gym', 'Diet', 'Fasting', 'Soccer']" :key="tab" 
+                    @click="activeTab = tab" 
+                    :class="['p-3 text-xs font-black uppercase tracking-widest transition-all', activeTab === tab ? 'tab-active' : 'text-slate-500']">
+                {{ tab }}
             </button>
         </div>
 
-        <div class="p-4 space-y-4">
-            <div v-for="(exercise, index) in currentDayExercises" :key="index" 
-                 :class="['border rounded-2xl p-4 transition-all', exercise.completed ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200 shadow-sm']">
-                <div class="flex gap-4">
-                    <input type="checkbox" v-model="exercise.completed" class="custom-checkbox">
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start">
-                            <span class="text-[9px] font-black text-blue-500 uppercase tracking-widest">{{ exercise.muscle }}</span>
-                            <span class="text-xs font-bold text-orange-500">{{ calculateExerciseBurn(exercise) }} kcal</span>
+        <div v-if="activeTab === 'Gym'" class="p-4 animate-in">
+            <div class="flex overflow-x-auto gap-2 mb-4 no-scrollbar">
+                <button v-for="(day, index) in days" :key="index" @click="currentDayIndex = index"
+                    :class="['px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap', currentDayIndex === index ? 'bg-blue-600' : 'bg-slate-800 text-slate-400']">
+                    {{ day.label }}
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div v-for="(ex, i) in currentDayExercises" :key="i" class="card p-4">
+                    <div class="flex gap-4">
+                        <input type="checkbox" v-model="ex.completed" class="custom-checkbox mt-1">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">{{ ex.muscle }}</span>
+                                <span class="text-xs font-bold text-orange-400">{{ calculateBurn(ex) }} kcal</span>
+                            </div>
+                            <h3 class="font-bold text-sm">{{ ex.name }}</h3>
+                            <div class="flex items-center gap-4 mt-3">
+                                <span class="text-[10px] bg-slate-700 px-2 py-1 rounded">Sets: {{ ex.sets }}</span>
+                                <input type="number" v-model="ex.liftedWeight" placeholder="kg" class="w-12 bg-transparent border-b border-slate-500 text-center font-bold text-xs">
+                            </div>
                         </div>
-                        <h3 class="font-bold text-slate-800 text-lg leading-tight">{{ exercise.name }}</h3>
-                        <div class="mt-3 flex items-center gap-3">
-                            <div class="text-xs font-bold text-slate-400">ΣΕΤ: {{ exercise.sets }}</div>
-                            <input type="number" v-model="exercise.liftedWeight" placeholder="kg" class="w-16 border-b-2 border-slate-200 p-1 text-center font-bold text-sm outline-none focus:border-blue-500">
+                        <div class="flex flex-col gap-2">
+                            <a :href="'https://www.youtube.com/results?search_query=' + ex.searchQuery" target="_blank" class="text-red-500"><i class="fab fa-youtube text-2xl"></i></a>
+                            <button @click="musicModalOpen = true" class="text-blue-400"><i class="fas fa-headphones"></i></button>
                         </div>
                     </div>
-                    <a :href="'https://www.youtube.com/results?search_query=' + exercise.searchQuery" target="_blank" class="text-red-500"><i class="fab fa-youtube text-3xl"></i></a>
                 </div>
+                
+                <div class="card p-4 border-l-4 border-purple-500 bg-purple-900/10">
+                    <h4 class="text-xs font-bold text-purple-400 uppercase mb-2"><i class="fas fa-magic mr-2"></i>Αποθεραπεία & Zplast</h4>
+                    <p class="text-[11px] text-slate-300">{{ days[currentDayIndex].stretching }}</p>
+                    <p class="text-[10px] text-slate-500 mt-2 italic">* Χρήση Zplast Total Repair Cream (Centella, Μαστίχα, Ιπποφαές) στα σημεία καταπόνησης.</p>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'Diet'" class="p-4 space-y-4">
+            <div class="card p-4 bg-orange-500/10 border-orange-500/30">
+                <h3 class="text-sm font-bold text-orange-400 mb-4">Καταγραφή Γεύματος / Πρωτεΐνης</h3>
+                <div class="space-y-3">
+                    <input v-model="newMeal.name" placeholder="Περιγραφή (π.χ. Κοτόπουλο)" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input v-model.number="newMeal.cals" type="number" placeholder="Θερμίδες (kcal)" class="bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm">
+                        <input v-model.number="newMeal.protein" type="number" placeholder="Πρωτεΐνη (g)" class="bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm">
+                    </div>
+                    <button @click="addMeal" class="w-full bg-orange-500 py-2 rounded-lg font-bold text-sm">ΠΡΟΣΘΗΚΗ ΓΕΥΜΑΤΟΣ</button>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <div v-for="(m, i) in meals" :key="i" class="card p-3 flex justify-between items-center text-xs">
+                    <div>
+                        <div class="font-bold">{{ m.name }}</div>
+                        <div class="opacity-50">{{ m.time }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-orange-400 font-bold">{{ m.cals }} kcal</div>
+                        <div class="text-blue-400">{{ m.protein }}g protein</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'Fasting'" class="p-4 space-y-4">
+            <div class="card p-6 text-center">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-blue-400 mb-4">Ενυδάτωση (Hourly Reminder)</h3>
+                <div class="flex justify-center gap-2 flex-wrap">
+                    <div v-for="n in 8" :key="n" @click="waterGlasses = n" 
+                        :class="['w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all', waterGlasses >= n ? 'bg-blue-600 border-blue-400' : 'border-slate-700 text-slate-700']">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-purple-400 mb-4 text-center">Intermittent Fasting 16:8</h3>
+                <div v-if="!isFasting" class="space-y-4">
+                    <div class="text-center">
+                        <label class="text-[10px] opacity-50 block mb-1">ΩΡΑ ΤΕΛΕΥΤΑΙΟΥ ΓΕΥΜΑΤΟΣ</label>
+                        <input type="time" v-model="lastMealTimeInput" class="bg-slate-900 border border-slate-700 p-3 rounded-xl text-xl font-bold text-white outline-none">
+                    </div>
+                    <button @click="startFasting" class="w-full bg-purple-600 py-4 rounded-2xl font-black text-xs uppercase shadow-xl">Εναρξη Νηστειας</button>
+                </div>
+                <div v-else class="text-center space-y-4">
+                    <div class="text-5xl font-black tracking-tighter text-purple-400">{{ fastingTimeLeft }}</div>
+                    <div class="text-xs font-bold text-green-400">Μπορείς να φας: {{ fastingEndTimeLabel }}</div>
+                    <button @click="isFasting = false; fastStartTime = null; saveData();" class="text-red-400 text-[10px] underline uppercase">Reset Timer</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'Soccer'" class="p-4 space-y-4 animate-in">
+            <div class="card p-4 border-l-4 border-blue-500">
+                <h3 class="text-sm font-bold text-blue-400 mb-1 uppercase tracking-tighter">Prediction Data Input</h3>
+                <p class="text-[10px] opacity-50 mb-4">Καταγραφή για τον Javascript Αλγόριθμό σου</p>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-[10px] uppercase opacity-50">Match xG</label>
+                        <input type="number" step="0.1" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm font-bold">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] uppercase opacity-50">Match xGA</label>
+                        <input type="number" step="0.1" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm font-bold">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] uppercase opacity-50">xCorners</label>
+                        <input type="number" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm font-bold">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] uppercase opacity-50">xCards</label>
+                        <input type="number" class="w-full bg-slate-900 border border-slate-700 p-2 rounded text-sm font-bold">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="text-[10px] uppercase opacity-50">Form (Last 6 Games)</label>
+                    <div class="flex gap-2 mt-1">
+                        <div v-for="n in 6" :key="n" class="w-8 h-8 bg-slate-900 border border-slate-700 rounded flex items-center justify-center font-bold text-xs text-blue-400 cursor-pointer hover:bg-blue-900">W</div>
+                    </div>
+                </div>
+                <button class="w-full mt-4 bg-blue-600 py-2 rounded-lg font-bold text-xs">ΑΠΟΘΗΚΕΥΣΗ MATCH DATA</button>
             </div>
         </div>
 
         <div class="fixed bottom-6 left-0 right-0 px-6 z-50">
-            <button @click="saveToGoogleSheet" :disabled="isSaving" 
-                class="w-full py-4 bg-green-600 text-white rounded-2xl shadow-2xl font-bold text-lg active:scale-95 transition-transform disabled:bg-slate-400">
-                <span v-if="!isSaving">ΑΠΟΘΗΚΕΥΣΗ ΣΤΟ SHEET</span>
-                <div v-else class="loader mx-auto"></div>
+            <button @click="syncToSheets" :disabled="isSyncing" 
+                class="w-full py-4 bg-green-600 text-white rounded-2xl shadow-2xl font-black text-sm uppercase flex justify-center items-center gap-3 active:scale-95 transition-transform disabled:bg-slate-700">
+                <div v-if="isSyncing" class="loader"></div>
+                <span>{{ isSyncing ? 'Syncing...' : 'Ολοκληρωση & Sync στο Sheet' }}</span>
             </button>
         </div>
 
-        <div v-if="nutritionModalOpen" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-            <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
-                <div class="p-4 bg-orange-500 text-white font-bold flex justify-between">
-                    <span>Γεύματα Ημέρας</span>
-                    <button @click="nutritionModalOpen = false"><i class="fas fa-times"></i></button>
+        <div v-if="musicModalOpen" class="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 backdrop-blur-md">
+            <div class="card w-full max-w-sm overflow-hidden">
+                <div class="p-4 bg-blue-600 font-bold flex justify-between items-center uppercase tracking-widest text-xs">
+                    <span>Podcasts & Music</span>
+                    <button @click="musicModalOpen = false"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="p-4 space-y-3">
-                    <div class="flex gap-2">
-                        <input v-model="newMeal.name" placeholder="Γεύμα" class="flex-1 border p-2 rounded-xl">
-                        <input v-model.number="newMeal.cals" type="number" placeholder="Kcal" class="w-20 border p-2 rounded-xl">
-                        <button @click="addMeal" class="bg-orange-500 text-white px-4 rounded-xl"><i class="fas fa-plus"></i></button>
-                    </div>
-                    <div v-for="(meal, i) in meals" :key="i" class="flex justify-between border-b pb-2 text-sm">
-                        <span>{{ meal.name }}</span>
-                        <span class="font-bold">{{ meal.cals }} kcal</span>
-                    </div>
+                <div class="p-4 space-y-3 overflow-y-auto max-h-[60vh]">
+                    <h4 class="text-[10px] opacity-50 font-bold uppercase">Podcasts 🎙️</h4>
+                    <a href="https://podlist.gr/podcasts?category=politics&order_by=created_at" target="_blank" class="block p-3 bg-slate-900 rounded-xl border border-slate-700 text-sm font-bold text-orange-400"><i class="fas fa-microphone mr-2"></i>Podlist (Politics)</a>
+                    <a href="https://www.kathimerini.gr/visual/podcasts/" target="_blank" class="block p-3 bg-slate-900 rounded-xl border border-slate-700 text-sm font-bold text-blue-400"><i class="fas fa-newspaper mr-2"></i>Η Καθημερινή</a>
+                    <a href="https://music.youtube.com/playlist?list=PLQRCbhtLyPgAZ6ZjwHcBOuzZs2u2dlKXV" target="_blank" class="block p-3 bg-slate-900 rounded-xl border border-slate-700 text-sm font-bold text-slate-300"><i class="fas fa-headphones mr-2"></i>LIFO Podcast</a>
+                    
+                    <h4 class="text-[10px] opacity-50 font-bold uppercase mt-4">Training Music 🎧</h4>
+                    <a href="https://music.youtube.com/playlist?list=PLiNpayiErByFtj94cAUMX3nku5gH9qbFt" target="_blank" class="block p-3 bg-slate-900 rounded-xl border border-slate-700 text-sm font-bold text-indigo-400"><i class="fas fa-bolt mr-2"></i>House Energy</a>
                 </div>
             </div>
         </div>
+
     </div>
 
     <script>
         const { createApp } = Vue
 
+        // PRE-CONFIGURED IDs
+        const CONFIG = {
+            FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLScnahaQL9EB9DZxbJ-hOYvTN0amQwdrYBKoHmjSZqws_sOPxg/formResponse',
+            ID_WORKOUT: 'entry.1984241690',
+            ID_WEIGHT: 'entry.1038258713',
+            ID_CALS: 'entry.1382158247'
+        };
+
         createApp({
             data() {
                 return {
+                    activeTab: 'Gym',
                     currentDayIndex: 0,
                     userWeight: 80,
-                    settingsOpen: false,
-                    nutritionModalOpen: false,
-                    isSaving: false,
                     waterGlasses: 0,
                     isFasting: false,
                     fastStartTime: null,
@@ -150,27 +251,32 @@
                     fastingEndTimeLabel: '--:--',
                     lastMealTimeInput: '',
                     meals: [],
-                    newMeal: { name: '', cals: '' },
+                    newMeal: { name: '', cals: '', protein: '' },
+                    settingsOpen: false,
+                    musicModalOpen: false,
+                    isSyncing: false,
                     audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
                     days: [
-                        { label: 'ΔΕΥ', title: 'Στήθος & Δικέφαλοι', exercises: [{ muscle: 'Στήθος', name: 'Πιέσεις Αλτήρων', sets: 3, type: 'strength', searchQuery: 'Dumbbell Chest Press' }, { muscle: 'Δικέφαλοι', name: 'Κάμψεις Μπάρας', sets: 3, type: 'strength', searchQuery: 'Barbell Curl' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
-                        { label: 'ΤΡΙ', title: 'Πλάτη & Τρικέφαλοι', exercises: [{ muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, type: 'strength', searchQuery: 'Lat Pulldown' }, { muscle: 'Τρικέφαλοι', name: 'Πιέσεις Σχοινί', sets: 3, type: 'strength', searchQuery: 'Tricep Pushdown' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
-                        { label: 'ΤΕΤ', title: 'Πόδια & Ώμοι', exercises: [{ muscle: 'Πόδια', name: 'Leg Press', sets: 3, type: 'strength', searchQuery: 'Leg Press' }, { muscle: 'Ώμοι', name: 'Shoulder Press', sets: 3, type: 'strength', searchQuery: 'Shoulder Press' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
-                        { label: 'ΠΕΜ', title: 'Στήθος & Τρικέφαλοι', exercises: [{ muscle: 'Στήθος', name: 'Pec Deck', sets: 3, type: 'strength', searchQuery: 'Pec Deck' }, { muscle: 'Τρικέφαλοι', name: 'Skullcrushers', sets: 3, type: 'strength', searchQuery: 'Skullcrushers' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
-                        { label: 'ΠΑΡ', title: 'Πλάτη & Δικέφαλοι', exercises: [{ muscle: 'Πλάτη', name: 'Single Arm Row', sets: 3, type: 'strength', searchQuery: 'Dumbbell Row' }, { muscle: 'Δικέφαλοι', name: 'Hammer Curls', sets: 3, type: 'strength', searchQuery: 'Hammer Curl' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
-                        { label: 'ΣΑΒ', title: 'Full Cardio Day', exercises: [{ muscle: 'Cardio', name: 'Διάδρομος (Σταθερός)', sets: 1, reps: '40', type: 'cardio', searchQuery: 'Treadmill walking' }, { muscle: 'Abs', name: 'Κοιλιακοί', sets: 4, type: 'iso', searchQuery: 'Crunches' }]}
+                        { label: 'ΔΕΥ', title: 'Στήθος & Δικέφαλοι', stretching: 'Διατάσεις Στήθους & Δικεφάλων', exercises: [{ muscle: 'Στήθος', name: 'Πιέσεις Αλτήρων', sets: 3, type: 'strength', searchQuery: 'Dumbbell Chest Press' }, { muscle: 'Δικέφαλοι', name: 'Κάμψεις Μπάρας', sets: 3, type: 'strength', searchQuery: 'Barbell Curl' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΤΡΙ', title: 'Πλάτη & Τρικέφαλοι', stretching: 'Διατάσεις Πλάτης & Τρικεφάλων', exercises: [{ muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, type: 'strength', searchQuery: 'Lat Pulldown' }, { muscle: 'Τρικέφαλοι', name: 'Πιέσεις Σχοινί', sets: 3, type: 'strength', searchQuery: 'Tricep Pushdown' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΤΕΤ', title: 'Πόδια & Ώμοι', stretching: 'Διατάσεις Ποδιών & Ώμων', exercises: [{ muscle: 'Πόδια', name: 'Leg Press', sets: 3, type: 'strength', searchQuery: 'Leg Press' }, { muscle: 'Ώμοι', name: 'Shoulder Press', sets: 3, type: 'strength', searchQuery: 'Shoulder Press' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΠΕΜ', title: 'Στήθος & Τρικέφαλοι (B)', stretching: 'Διατάσεις Στήθους', exercises: [{ muscle: 'Στήθος', name: 'Pec Deck', sets: 3, type: 'strength', searchQuery: 'Pec Deck' }, { muscle: 'Τρικέφαλοι', name: 'Skullcrushers', sets: 3, type: 'strength', searchQuery: 'Skullcrushers' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΠΑΡ', title: 'Πλάτη & Δικέφαλοι (B)', stretching: 'Διατάσεις Πλάτης', exercises: [{ muscle: 'Πλάτη', name: 'Single Arm Row', sets: 3, type: 'strength', searchQuery: 'Dumbbell Row' }, { muscle: 'Δικέφαλοι', name: 'Hammer Curls', sets: 3, type: 'strength', searchQuery: 'Hammer Curl' }, { muscle: 'Cardio', name: 'Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΣΑΒ', title: 'Full Cardio Day', stretching: 'Διατάσεις Ολόκληρου Σώματος', exercises: [{ muscle: 'Cardio', name: 'Διάδρομος (Σταθερός)', sets: 1, reps: '40', type: 'cardio', searchQuery: 'Treadmill walking' }, { muscle: 'Abs', name: 'Κοιλιακοί', sets: 4, type: 'iso', searchQuery: 'Crunches' }]}
                     ]
                 }
             },
             computed: {
-                dailyTarget() { return Math.round(this.userWeight * 28 - 500); },
+                calorieTarget() { return Math.round(this.userWeight * 28 - 500); },
+                proteinTarget() { return Math.round(this.userWeight * 2); },
                 totalEaten() { return this.meals.reduce((s, m) => s + m.cals, 0); },
-                totalBurnedSoFar() { return Math.round(this.days[this.currentDayIndex].exercises.filter(e => e.completed).reduce((s, e) => s + parseFloat(this.calculateExerciseBurn(e)), 0)); },
-                calorieBalance() { return this.dailyTarget - this.totalEaten + this.totalBurnedSoFar; },
+                totalProtein() { return this.meals.reduce((s, m) => s + (m.protein || 0), 0); },
+                totalBurnedSoFar() { return Math.round(this.days[this.currentDayIndex].exercises.filter(e => e.completed).reduce((s, e) => s + parseFloat(this.calculateBurn(e)), 0)); },
+                calorieBalance() { return this.calorieTarget - this.totalEaten + this.totalBurnedSoFar; },
                 currentDayExercises() { return this.days[this.currentDayIndex].exercises; }
             },
             mounted() {
-                const saved = JSON.parse(localStorage.getItem('workout_v5') || '{}');
+                const saved = JSON.parse(localStorage.getItem('workout_v_final') || '{}');
                 if (saved.weight) this.userWeight = saved.weight;
                 if (saved.meals) this.meals = saved.meals;
                 if (saved.water) this.waterGlasses = saved.water;
@@ -185,51 +291,46 @@
                 this.currentDayIndex = Math.max(0, now.getDay() - 1);
             },
             methods: {
-                saveSettings() { localStorage.setItem('workout_v5', JSON.stringify({ weight: this.userWeight, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
-                addWater(a) { this.waterGlasses = Math.max(0, this.waterGlasses + a); this.saveSettings(); },
-                startFastingWithTime() {
-                    const [h, m] = this.lastMealTimeInput.split(':');
-                    const startTime = new Date();
-                    startTime.setHours(h, m, 0);
-                    if (startTime > new Date()) startTime.setDate(startTime.getDate() - 1);
-                    this.fastStartTime = startTime.getTime();
-                    this.isFasting = true;
-                    this.saveSettings();
-                    this.updateFastingTimer();
-                    setInterval(this.updateFastingTimer, 1000);
-                },
-                stopFasting() { this.isFasting = false; this.fastStartTime = null; this.saveSettings(); },
-                updateFastingTimer() {
-                    if (!this.fastStartTime) return;
-                    const end = this.fastStartTime + (16 * 60 * 60 * 1000);
-                    const now = new Date().getTime();
-                    const diff = end - now;
-                    
-                    const endDate = new Date(end);
-                    this.fastingEndTimeLabel = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
-
-                    if (diff <= 0) {
-                        this.fastingTimeLeft = "00:00:00";
-                    } else {
-                        const h = Math.floor(diff / 3600000);
-                        const m = Math.floor((diff % 3600000) / 60000);
-                        const s = Math.floor((diff % 60000) / 1000);
-                        this.fastingTimeLeft = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-                    }
-                },
-                calculateExerciseBurn(ex) {
-                    let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets;
+                saveData() { localStorage.setItem('workout_v_final', JSON.stringify({ weight: this.userWeight, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
+                calculateBurn(ex) {
+                    let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets || 3;
                     if (ex.type === 'cardio') b = (parseInt(ex.reps || 20) * 7 * w) / 200;
                     else if (ex.type === 'strength') b = (w * 0.05 * s * 2.5) + (l * 0.03 * s);
                     else b = (w * 0.04 * s * 1.5);
                     return b.toFixed(0);
                 },
-                addMeal() { if(this.newMeal.name) { this.meals.unshift({...this.newMeal}); this.newMeal = {name:'', cals:''}; this.saveSettings(); }},
-                async saveToGoogleSheet() {
-                    this.isSaving = true;
-                    // Εδώ μπαίνουν τα IDs του Google Form σου όπως πριν
-                    alert('Τα δεδομένα στάλθηκαν στο Sheet!');
-                    this.isSaving = false;
+                addMeal() { if(this.newMeal.name && this.newMeal.cals) { this.meals.unshift({...this.newMeal, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}); this.newMeal = {name:'', cals:'', protein:''}; this.saveData(); }},
+                startFasting() {
+                    const [h, m] = this.lastMealTimeInput.split(':');
+                    const start = new Date(); start.setHours(h, m, 0);
+                    if (start > new Date()) start.setDate(start.getDate() - 1);
+                    this.fastStartTime = start.getTime(); this.isFasting = true; this.saveData();
+                    this.updateFastingTimer(); setInterval(this.updateFastingTimer, 1000);
+                },
+                updateFastingTimer() {
+                    if (!this.fastStartTime) return;
+                    const end = this.fastStartTime + (16 * 60 * 60 * 1000);
+                    const now = new Date().getTime();
+                    const diff = end - now;
+                    const endDate = new Date(end);
+                    this.fastingEndTimeLabel = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
+                    if (diff <= 0) this.fastingTimeLeft = "DONE";
+                    else {
+                        const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000); const s = Math.floor((diff % 60000) / 1000);
+                        this.fastingTimeLeft = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                    }
+                },
+                async syncToSheets() {
+                    this.isSyncing = true;
+                    const fd = new FormData();
+                    fd.append(CONFIG.ID_WORKOUT, this.days[this.currentDayIndex].title);
+                    fd.append(CONFIG.ID_WEIGHT, this.userWeight);
+                    fd.append(CONFIG.ID_CALS, this.totalBurnedSoFar);
+                    try {
+                        await fetch(CONFIG.FORM_URL, { method: 'POST', mode: 'no-cors', body: fd });
+                        alert('✅ Συγχρονισμός Sheet Επιτυχής!');
+                    } catch (e) { alert('❌ Σφάλμα Σύνδεσης'); }
+                    finally { this.isSyncing = false; }
                 }
             }
         }).mount('#app')
