@@ -21,6 +21,7 @@
         .custom-checkbox:checked::before { content: "✓"; color: white; font-weight: bold; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .loader { border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        .suggestion-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -106,28 +107,57 @@
                 <div class="card p-4 border-l-4 border-purple-500 bg-purple-900/10">
                     <h4 class="text-xs font-bold text-purple-400 uppercase mb-2"><i class="fas fa-magic mr-2"></i>Αποθεραπεία & Αναρρωση</h4>
                     <p class="text-[11px] text-slate-300">{{ days[currentDayIndex].stretching }}</p>
-                    <p class="text-[10px] text-slate-500 mt-2 italic">* Χρήση Zplast Total Repair Cream (Centella, Μαστίχα, Ιπποφαές) στις μυϊκές ομάδες που καταπονήθηκαν για γρηγορότερη αποκατάσταση.</p>
+                    <p class="text-[10px] text-slate-500 mt-2 italic">* Χρήση Zplast Total Repair Cream (Centella, Μαστίχα, Ιπποφαές) στις μυϊκές ομάδες που καταπονήθηκαν.</p>
                 </div>
             </div>
         </div>
 
         <div v-if="activeTab === 'Diet'" class="p-4 space-y-4">
-            <div class="card p-4 bg-orange-500/10 border-orange-500/30">
-                <h3 class="text-sm font-bold text-orange-400 mb-4">Καταγραφή Γεύματος / Πρωτεΐνης</h3>
+            <div class="card p-4 bg-orange-500/10 border-orange-500/30 relative">
+                <h3 class="text-sm font-bold text-orange-400 mb-4">Έξυπνη Καταγραφή Γεύματος</h3>
+                
                 <div class="space-y-3">
-                    <input v-model="newMeal.name" placeholder="Περιγραφή (π.χ. Κοτόπουλο & Ρύζι)" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-white">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input v-model.number="newMeal.cals" type="number" placeholder="Θερμίδες (kcal)" class="bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-white">
-                        <input v-model.number="newMeal.protein" type="number" placeholder="Πρωτεΐνη (g)" class="bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-white">
+                    <div class="relative">
+                        <input v-model="searchQuery" @focus="showSuggestions = true" placeholder="Αναζήτηση τροφίμου..." class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-white focus:border-orange-500 outline-none">
+                        
+                        <div v-if="showSuggestions && filteredFoods.length > 0" class="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                            <div v-for="food in filteredFoods" :key="food.name" @click="selectFood(food)" class="suggestion-item p-2 text-sm border-b border-slate-700 hover:bg-slate-700 cursor-pointer flex justify-between">
+                                <span>{{ food.name }}</span>
+                                <span class="text-[10px] opacity-60">{{ food.cals }}kcal/100g</span>
+                            </div>
+                        </div>
                     </div>
-                    <button @click="addMeal" class="w-full bg-orange-500 py-2 rounded-lg font-bold text-sm text-white">ΠΡΟΣΘΗΚΗ ΓΕΥΜΑΤΟΣ</button>
+
+                    <div v-if="selectedFoodItem" class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex gap-3 items-center">
+                        <div class="flex-1">
+                            <div class="text-xs font-bold text-blue-300">{{ selectedFoodItem.name }}</div>
+                            <div class="text-[10px] opacity-70">Βάση: 100g -> {{ selectedFoodItem.cals }} kcal | {{ selectedFoodItem.protein }}g Πρωτ.</div>
+                        </div>
+                        <div class="w-20">
+                            <label class="text-[9px] opacity-50 uppercase block mb-1">Γραμμαρια</label>
+                            <input type="number" v-model.number="foodGrams" @input="calculateFromGrams" placeholder="g" class="w-full bg-slate-900 border border-slate-600 p-1 rounded text-center text-sm font-bold text-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[9px] opacity-50 uppercase block mb-1">Θερμίδες (kcal)</label>
+                            <input v-model.number="newMeal.cals" type="number" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-white font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[9px] opacity-50 uppercase block mb-1">Πρωτεΐνη (g)</label>
+                            <input v-model.number="newMeal.protein" type="number" class="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-white font-bold">
+                        </div>
+                    </div>
+                    
+                    <button @click="addMeal" class="w-full bg-orange-500 hover:bg-orange-600 py-3 rounded-lg font-bold text-sm text-white transition-colors uppercase tracking-widest mt-2">ΠΡΟΣΘΗΚΗ ΣΤΗ ΜΕΡΑ</button>
                 </div>
             </div>
             
             <div class="space-y-2">
                 <div v-for="(m, i) in meals" :key="i" class="card p-3 flex justify-between items-center text-xs">
                     <div>
-                        <div class="font-bold">{{ m.name }}</div>
+                        <div class="font-bold text-slate-200">{{ m.name }}</div>
                         <div class="opacity-50">{{ m.time }}</div>
                     </div>
                     <div class="text-right flex items-center gap-3">
@@ -135,7 +165,7 @@
                             <div class="text-orange-400 font-bold">{{ m.cals }} kcal</div>
                             <div class="text-blue-400">{{ m.protein }}g protein</div>
                         </div>
-                        <button @click="removeMeal(i)" class="text-red-500 ml-2"><i class="fas fa-trash"></i></button>
+                        <button @click="removeMeal(i)" class="text-red-500 ml-2 p-1 hover:bg-red-500/20 rounded"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
             </div>
@@ -208,6 +238,36 @@
             ID_CALS: 'entry.1382158247'
         };
 
+        // LOCAL FOOD DATABASE (per 100g)
+        const FOOD_DATABASE = [
+            { name: 'Στήθος Κοτόπουλο (Ψητό)', cals: 165, protein: 31 },
+            { name: 'Ρύζι Λευκό (Βρασμένο)', cals: 130, protein: 2.7 },
+            { name: 'Ρύζι Καστανό (Βρασμένο)', cals: 112, protein: 2.3 },
+            { name: 'Αυγό Βραστό', cals: 155, protein: 13 },
+            { name: 'Ασπράδια Αυγού', cals: 52, protein: 11 },
+            { name: 'Βρώμη', cals: 389, protein: 16.9 },
+            { name: 'Μοσχάρι Άπαχο (Ψητό)', cals: 250, protein: 26 },
+            { name: 'Μακαρόνια Λευκά (Βρασμένα)', cals: 158, protein: 5.8 },
+            { name: 'Μακαρόνια Ολικής (Βρασμένα)', cals: 124, protein: 5.3 },
+            { name: 'Τόνος σε Νερό (Στραγγιστός)', cals: 116, protein: 26 },
+            { name: 'Γιαούρτι 2%', cals: 73, protein: 7 },
+            { name: 'Γάλα 1.5%', cals: 47, protein: 3.4 },
+            { name: 'Σολομός (Ψητός)', cals: 206, protein: 22 },
+            { name: 'Πατάτα Βραστή', cals: 87, protein: 1.9 },
+            { name: 'Γλυκοπατάτα (Ψητή)', cals: 90, protein: 2 },
+            { name: 'Ελαιόλαδο', cals: 884, protein: 0 },
+            { name: 'Φακές (Βρασμένες)', cals: 116, protein: 9 },
+            { name: 'Φασόλια (Βρασμένα)', cals: 127, protein: 9 },
+            { name: 'Φέτα', cals: 264, protein: 14 },
+            { name: 'Τυρί Gouda', cals: 356, protein: 25 },
+            { name: 'Μήλο', cals: 52, protein: 0.3 },
+            { name: 'Μπανάνα', cals: 89, protein: 1.1 },
+            { name: 'Αβοκάντο', cals: 160, protein: 2 },
+            { name: 'Φυστικοβούτυρο', cals: 588, protein: 25 },
+            { name: 'Αμύγδαλα', cals: 579, protein: 21 },
+            { name: 'Ψωμί Ολικής', cals: 247, protein: 11 }
+        ];
+
         createApp({
             data() {
                 return {
@@ -215,93 +275,58 @@
                     currentDayIndex: 0,
                     userWeight: 80,
                     waterGlasses: 0,
+                    
+                    // Fasting
                     isFasting: false,
                     fastStartTime: null,
                     fastingTimeLeft: '16:00:00',
                     fastingEndTimeLabel: '--:--',
                     lastMealTimeInput: '',
+                    
+                    // Diet & Food DB
                     meals: [],
+                    searchQuery: '',
+                    showSuggestions: false,
+                    foodDb: FOOD_DATABASE,
+                    selectedFoodItem: null,
+                    foodGrams: 100,
                     newMeal: { name: '', cals: '', protein: '' },
+                    
+                    // UI States
                     settingsOpen: false,
                     musicModalOpen: false,
                     isSyncing: false,
                     audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
                     
-                    // OPTIMIZED CUTTING PROGRAM
-                    // Βαριές πολυαρθρικές για διατήρηση μυών + LISS/HIIT Cardio
+                    // Workouts (Cutting optimized)
                     days: [
-                        { 
-                            label: 'ΔΕΥ', title: 'Στήθος & Πλάτη (Push/Pull)', stretching: 'Διατάσεις Θώρακα & Πλάτης', 
-                            exercises: [
-                                { muscle: 'Στήθος', name: 'Πιέσεις Επικλινή (Αλτήρες)', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Incline Dumbbell Press' }, 
-                                { muscle: 'Πλάτη', name: 'Κωπηλατική Μπάρας', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Barbell Row' }, 
-                                { muscle: 'Στήθος', name: 'Πιέσεις Ίσιου Πάγκου', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Flat Bench Press' },
-                                { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Lat Pulldown' },
-                                { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill Fat Burn' }
-                            ]
-                        },
-                        { 
-                            label: 'ΤΡΙ', title: 'Πόδια & Κοιλιακοί', stretching: 'Διατάσεις Τετρακέφαλων & Μηριαίων', 
-                            exercises: [
-                                { muscle: 'Πόδια', name: 'Squat (Καθίσματα)', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Barbell Squat' }, 
-                                { muscle: 'Πόδια', name: 'Άρσεις Θανάτου (RDLs)', sets: 4, reps: '10', type: 'strength', searchQuery: 'Romanian Deadlift' }, 
-                                { muscle: 'Πόδια', name: 'Leg Press', sets: 3, reps: '12', type: 'strength', searchQuery: 'Leg Press' },
-                                { muscle: 'Κοιλιακοί', name: 'Άρσεις Ποδιών', sets: 4, reps: '15', type: 'iso', searchQuery: 'Hanging Leg Raises' },
-                                { muscle: 'Cardio', name: 'LISS - Ποδήλατο', sets: 1, reps: '15', type: 'cardio', searchQuery: 'Stationary Bike Workout' }
-                            ]
-                        },
-                        { 
-                            label: 'ΤΕΤ', title: 'Ώμοι & Χέρια', stretching: 'Διατάσεις Ώμων & Χεριών', 
-                            exercises: [
-                                { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Overhead)', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Seated Dumbbell Shoulder Press' }, 
-                                { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις Ώμων', sets: 4, reps: '12-15', type: 'strength', searchQuery: 'Dumbbell Lateral Raise' }, 
-                                { muscle: 'Δικέφαλοι', name: 'Κάμψεις Δικεφάλων', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Barbell Bicep Curl' },
-                                { muscle: 'Τρικέφαλοι', name: 'Γαλλικές Πιέσεις', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Skullcrushers' },
-                                { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }
-                            ]
-                        },
-                        { 
-                            label: 'ΠΕΜ', title: 'Full Body & HIIT', stretching: 'Δυναμικές Διατάσεις Σώματος', 
-                            exercises: [
-                                { muscle: 'Πόδια', name: 'Προβολές (Lunges)', sets: 3, reps: '12', type: 'strength', searchQuery: 'Dumbbell Lunges' }, 
-                                { muscle: 'Στήθος', name: 'Πιέσεις Μηχανήματος', sets: 3, reps: '12', type: 'strength', searchQuery: 'Chest Press Machine' }, 
-                                { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλίας', sets: 3, reps: '12', type: 'strength', searchQuery: 'Seated Cable Row' },
-                                { muscle: 'Ώμοι', name: 'Face Pulls', sets: 3, reps: '15', type: 'strength', searchQuery: 'Cable Face Pulls' },
-                                { muscle: 'Cardio', name: 'HIIT Διάδρομος (1\' Fast / 1\' Slow)', sets: 1, reps: '15', type: 'cardio', searchQuery: 'HIIT Treadmill Workout' }
-                            ]
-                        },
-                        { 
-                            label: 'ΠΑΡ', title: 'Pump & Αδύναμα Σημεία', stretching: 'Διατάσεις Στήθους', 
-                            exercises: [
-                                { muscle: 'Στήθος', name: 'Pec Deck / Flyes', sets: 3, reps: '15', type: 'strength', searchQuery: 'Pec Deck Flyes' }, 
-                                { muscle: 'Πλάτη', name: 'Πουλόβερ', sets: 3, reps: '15', type: 'strength', searchQuery: 'Dumbbell Pullover' }, 
-                                { muscle: 'Δικέφαλοι', name: 'Σφυριά (Hammer Curls)', sets: 3, reps: '12', type: 'strength', searchQuery: 'Hammer Curls' },
-                                { muscle: 'Τρικέφαλοι', name: 'Πιέσεις με Σχοινί', sets: 3, reps: '15', type: 'strength', searchQuery: 'Tricep Rope Pushdown' },
-                                { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }
-                            ]
-                        },
-                        { 
-                            label: 'ΣΑΒ', title: 'Fat Burn (Cardio & Core)', stretching: 'Πλήρες Πρόγραμμα Διατάσεων', 
-                            exercises: [
-                                { muscle: 'Cardio', name: 'Γρήγορο Περπάτημα ή Ελλειπτικό', sets: 1, reps: '45', type: 'cardio', searchQuery: 'LISS Cardio Elliptical' }, 
-                                { muscle: 'Κοιλιακοί', name: 'Woodchoppers (Τροχαλία)', sets: 3, reps: '15', type: 'iso', searchQuery: 'Cable Woodchopper' },
-                                { muscle: 'Κοιλιακοί', name: 'Σανίδα (Plank)', sets: 3, reps: '60"', type: 'iso', searchQuery: 'Plank form' }
-                            ]
-                        }
+                        { label: 'ΔΕΥ', title: 'Στήθος & Πλάτη (Push/Pull)', stretching: 'Διατάσεις Θώρακα & Πλάτης', exercises: [{ muscle: 'Στήθος', name: 'Πιέσεις Επικλινή (Αλτήρες)', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Incline Dumbbell Press' }, { muscle: 'Πλάτη', name: 'Κωπηλατική Μπάρας', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Barbell Row' }, { muscle: 'Στήθος', name: 'Πιέσεις Ίσιου Πάγκου', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Flat Bench Press' }, { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Lat Pulldown' }, { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill Fat Burn' }]},
+                        { label: 'ΤΡΙ', title: 'Πόδια & Κοιλιακοί', stretching: 'Διατάσεις Τετρακέφαλων & Μηριαίων', exercises: [{ muscle: 'Πόδια', name: 'Squat (Καθίσματα)', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Barbell Squat' }, { muscle: 'Πόδια', name: 'Άρσεις Θανάτου (RDLs)', sets: 4, reps: '10', type: 'strength', searchQuery: 'Romanian Deadlift' }, { muscle: 'Πόδια', name: 'Leg Press', sets: 3, reps: '12', type: 'strength', searchQuery: 'Leg Press' }, { muscle: 'Κοιλιακοί', name: 'Άρσεις Ποδιών', sets: 4, reps: '15', type: 'iso', searchQuery: 'Hanging Leg Raises' }, { muscle: 'Cardio', name: 'LISS - Ποδήλατο', sets: 1, reps: '15', type: 'cardio', searchQuery: 'Stationary Bike Workout' }]},
+                        { label: 'ΤΕΤ', title: 'Ώμοι & Χέρια', stretching: 'Διατάσεις Ώμων & Χεριών', exercises: [{ muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Overhead)', sets: 4, reps: '8-10', type: 'strength', searchQuery: 'Seated Dumbbell Shoulder Press' }, { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις Ώμων', sets: 4, reps: '12-15', type: 'strength', searchQuery: 'Dumbbell Lateral Raise' }, { muscle: 'Δικέφαλοι', name: 'Κάμψεις Δικεφάλων', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Barbell Bicep Curl' }, { muscle: 'Τρικέφαλοι', name: 'Γαλλικές Πιέσεις', sets: 3, reps: '10-12', type: 'strength', searchQuery: 'Skullcrushers' }, { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΠΕΜ', title: 'Full Body & HIIT', stretching: 'Δυναμικές Διατάσεις Σώματος', exercises: [{ muscle: 'Πόδια', name: 'Προβολές (Lunges)', sets: 3, reps: '12', type: 'strength', searchQuery: 'Dumbbell Lunges' }, { muscle: 'Στήθος', name: 'Πιέσεις Μηχανήματος', sets: 3, reps: '12', type: 'strength', searchQuery: 'Chest Press Machine' }, { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλίας', sets: 3, reps: '12', type: 'strength', searchQuery: 'Seated Cable Row' }, { muscle: 'Ώμοι', name: 'Face Pulls', sets: 3, reps: '15', type: 'strength', searchQuery: 'Cable Face Pulls' }, { muscle: 'Cardio', name: 'HIIT Διάδρομος (1\' Fast / 1\' Slow)', sets: 1, reps: '15', type: 'cardio', searchQuery: 'HIIT Treadmill Workout' }]},
+                        { label: 'ΠΑΡ', title: 'Pump & Αδύναμα Σημεία', stretching: 'Διατάσεις Στήθους', exercises: [{ muscle: 'Στήθος', name: 'Pec Deck / Flyes', sets: 3, reps: '15', type: 'strength', searchQuery: 'Pec Deck Flyes' }, { muscle: 'Πλάτη', name: 'Πουλόβερ', sets: 3, reps: '15', type: 'strength', searchQuery: 'Dumbbell Pullover' }, { muscle: 'Δικέφαλοι', name: 'Σφυριά (Hammer Curls)', sets: 3, reps: '12', type: 'strength', searchQuery: 'Hammer Curls' }, { muscle: 'Τρικέφαλοι', name: 'Πιέσεις με Σχοινί', sets: 3, reps: '15', type: 'strength', searchQuery: 'Tricep Rope Pushdown' }, { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '20', type: 'cardio', searchQuery: 'Incline Treadmill' }]},
+                        { label: 'ΣΑΒ', title: 'Fat Burn (Cardio & Core)', stretching: 'Πλήρες Πρόγραμμα Διατάσεων', exercises: [{ muscle: 'Cardio', name: 'Γρήγορο Περπάτημα ή Ελλειπτικό', sets: 1, reps: '45', type: 'cardio', searchQuery: 'LISS Cardio Elliptical' }, { muscle: 'Κοιλιακοί', name: 'Woodchoppers (Τροχαλία)', sets: 3, reps: '15', type: 'iso', searchQuery: 'Cable Woodchopper' }, { muscle: 'Κοιλιακοί', name: 'Σανίδα (Plank)', sets: 3, reps: '60"', type: 'iso', searchQuery: 'Plank form' }]}
                     ]
                 }
             },
             computed: {
-                calorieTarget() { return Math.round(this.userWeight * 28 - 500); }, // Υπολογισμός για Cutting
-                proteinTarget() { return Math.round(this.userWeight * 2); }, // 2g ανά κιλό για διατήρηση μυών
+                calorieTarget() { return Math.round(this.userWeight * 28 - 500); },
+                proteinTarget() { return Math.round(this.userWeight * 2); },
                 totalEaten() { return this.meals.reduce((s, m) => s + m.cals, 0); },
                 totalProtein() { return this.meals.reduce((s, m) => s + (m.protein || 0), 0); },
                 totalBurnedSoFar() { return Math.round(this.days[this.currentDayIndex].exercises.filter(e => e.completed).reduce((s, e) => s + parseFloat(this.calculateBurn(e)), 0)); },
                 calorieBalance() { return this.calorieTarget - this.totalEaten + this.totalBurnedSoFar; },
-                currentDayExercises() { return this.days[this.currentDayIndex].exercises; }
+                currentDayExercises() { return this.days[this.currentDayIndex].exercises; },
+                
+                // Φίλτρο αναζήτησης τροφίμων
+                filteredFoods() {
+                    if (!this.searchQuery) return [];
+                    const q = this.searchQuery.toLowerCase();
+                    return this.foodDb.filter(f => f.name.toLowerCase().includes(q));
+                }
             },
             mounted() {
-                const saved = JSON.parse(localStorage.getItem('workout_cutting_pro') || '{}');
+                const saved = JSON.parse(localStorage.getItem('workout_cutting_v2') || '{}');
                 if (saved.weight) this.userWeight = saved.weight;
                 if (saved.meals) this.meals = saved.meals;
                 if (saved.water) this.waterGlasses = saved.water;
@@ -314,9 +339,55 @@
                 const now = new Date();
                 this.lastMealTimeInput = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                 this.currentDayIndex = Math.max(0, now.getDay() - 1);
+
+                // Κλείσιμο dropdown όταν κάνεις κλικ αλλού
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.relative')) {
+                        this.showSuggestions = false;
+                    }
+                });
             },
             methods: {
-                saveData() { localStorage.setItem('workout_cutting_pro', JSON.stringify({ weight: this.userWeight, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
+                saveData() { localStorage.setItem('workout_cutting_v2', JSON.stringify({ weight: this.userWeight, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
+                
+                // Meal Smart Input Methods
+                selectFood(food) {
+                    this.selectedFoodItem = food;
+                    this.searchQuery = food.name;
+                    this.showSuggestions = false;
+                    this.newMeal.name = food.name;
+                    this.foodGrams = 100; // Default 100g
+                    this.calculateFromGrams();
+                },
+                calculateFromGrams() {
+                    if (!this.selectedFoodItem) return;
+                    const factor = this.foodGrams / 100;
+                    this.newMeal.cals = Math.round(this.selectedFoodItem.cals * factor);
+                    this.newMeal.protein = Math.round(this.selectedFoodItem.protein * factor * 10) / 10;
+                },
+                addMeal() { 
+                    // Αν πληκτρολόγησε κάτι δικό του που δεν είναι στη βάση (έχει κενό name)
+                    if(!this.newMeal.name && this.searchQuery) this.newMeal.name = this.searchQuery;
+
+                    if(this.newMeal.name && this.newMeal.cals) { 
+                        let fullName = this.selectedFoodItem ? `${this.newMeal.name} (${this.foodGrams}g)` : this.newMeal.name;
+                        this.meals.unshift({
+                            name: fullName, 
+                            cals: this.newMeal.cals, 
+                            protein: this.newMeal.protein || 0,
+                            time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+                        }); 
+                        // Reset forms
+                        this.newMeal = {name:'', cals:'', protein:''}; 
+                        this.searchQuery = '';
+                        this.selectedFoodItem = null;
+                        this.foodGrams = 100;
+                        this.saveData(); 
+                    }
+                },
+                removeMeal(i) { this.meals.splice(i, 1); this.saveData(); },
+                
+                // Workout & Fasting
                 calculateBurn(ex) {
                     let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets || 3;
                     if (ex.type === 'cardio') b = (parseInt(ex.reps || 20) * 7 * w) / 200;
@@ -324,8 +395,6 @@
                     else b = (w * 0.04 * s * 1.5);
                     return b.toFixed(0);
                 },
-                addMeal() { if(this.newMeal.name && this.newMeal.cals) { this.meals.unshift({...this.newMeal, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}); this.newMeal = {name:'', cals:'', protein:''}; this.saveData(); }},
-                removeMeal(i) { this.meals.splice(i, 1); this.saveData(); },
                 startFasting() {
                     const [h, m] = this.lastMealTimeInput.split(':');
                     const start = new Date(); start.setHours(h, m, 0);
