@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Fitness Hub x2 with Sketches</title>
+    <title>Ultimate Fitness Hub x2</title>
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#1e40af">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -15,15 +15,12 @@
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; cursor: pointer; transition: background 0.2s; }
-        .card:hover { background: #232f46; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
         .custom-checkbox { appearance: none; background: #334155; width: 1.5em; height: 1.5em; border-radius: 0.4em; display: grid; place-content: center; transition: 0.2s; cursor: pointer; }
         .custom-checkbox:checked { background: #10b981; }
         .custom-checkbox:checked::before { content: "✓"; color: white; font-weight: bold; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .loader { border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
-        /* Sketch styling */
-        .exercise-sketch { border: 2px solid #475569; border-radius: 0.75rem; background: #f1f5f9; padding: 0.5rem; max-width: 150px; }
     </style>
 </head>
 <body>
@@ -35,7 +32,7 @@
                     <h1 class="text-xl font-black text-blue-500 uppercase tracking-tighter flex items-center gap-2">
                         <i class="fas fa-sliders-h text-sm"></i> Fitness Hub
                     </h1>
-                    <p class="text-[10px] text-slate-400">Mode: 4-Day Cutting (2x/W) with Sketches</p>
+                    <p class="text-[10px] text-slate-400">Target: Cutting x2 Frequency</p>
                 </div>
                 <div class="text-right">
                     <div class="text-xs opacity-50 uppercase">Υπόλοιπο (Kcal)</div>
@@ -64,25 +61,65 @@
         </div>
 
         <div v-if="settingsOpen" class="p-4 bg-slate-800 border-b border-slate-700 animate-fade-in space-y-4">
-            <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest border-b border-slate-700 pb-2">Σωματικά Δεδομένα</h3>
-            <div class="grid grid-cols-3 gap-3">
-                <input type="number" v-model.number="userWeight" @change="saveData" placeholder="kg" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center text-white outline-none">
-                <input type="number" v-model.number="userHeight" @change="saveData" placeholder="cm" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center text-white outline-none">
-                <input type="number" v-model.number="userAge" @change="saveData" placeholder="Age" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center text-white outline-none">
+            <h3 class="text-xs font-bold text-blue-400 uppercase tracking-widest border-b border-slate-700 pb-2">Σωματικά Δεδομένα & Στόχοι</h3>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase block mb-1">Τρέχον Βάρος (kg)</label>
+                    <input type="number" v-model.number="userWeight" @change="saveData" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-bold text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-orange-400 uppercase block mb-1 font-bold">Στόχος Βάρους (kg)</label>
+                    <input type="number" v-model.number="targetWeight" @change="saveData" class="w-full bg-slate-900 border border-orange-500/50 rounded p-2 text-center font-bold text-orange-400 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase block mb-1">Ύψος (cm)</label>
+                    <input type="number" v-model.number="userHeight" @change="saveData" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-bold text-white outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] opacity-50 uppercase block mb-1">Ηλικία (y)</label>
+                    <input type="number" v-model.number="userAge" @change="saveData" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-center font-bold text-white outline-none">
+                </div>
             </div>
-            <div class="bg-slate-900 p-3 rounded-lg flex justify-between items-center text-xs">
-                <span>BMI: <span class="font-bold" :class="bmiColorClass">{{ calculatedBMI }}</span></span>
-                <span class="font-bold px-3 py-1 rounded-full bg-slate-800" :class="bmiColorClass">{{ bmiStatus }}</span>
+            
+            <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <div>
+                        <div class="text-[10px] opacity-50 uppercase">Τρέχον BMI</div>
+                        <div class="text-xl font-black" :class="bmiColorClass">{{ calculatedBMI }}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-orange-400 uppercase">Στόχος BMI</div>
+                        <div class="text-xl font-black text-orange-400">{{ calculatedTargetBMI }}</div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <div class="text-slate-400">Κατάσταση: <span class="font-bold" :class="bmiColorClass">{{ bmiStatus }}</span></div>
+                    <div class="text-slate-400" v-if="userWeight > targetWeight">
+                        Απομένουν: <span class="font-bold text-red-400">{{ (userWeight - targetWeight).toFixed(1) }} kg</span>
+                    </div>
+                    <div class="text-slate-400" v-else-if="userWeight < targetWeight">
+                        Υπολείπονται: <span class="font-bold text-blue-400">{{ (targetWeight - userWeight).toFixed(1) }} kg</span>
+                    </div>
+                    <div class="text-green-400 font-bold" v-else>Στόχος επιτεύχθηκε! 🏆</div>
+                </div>
             </div>
         </div>
 
-        <div class="flex justify-around bg-slate-900 border-b border-slate-800 sticky top-[152px] z-30">
-            <button v-for="tab in ['Gym', 'Diet', 'Fasting']" :tab="tab" @click="activeTab = tab; settingsOpen = false;" :class="['p-3 text-xs font-black uppercase tracking-widest transition-all w-full', activeTab === tab ? 'tab-active' : 'text-slate-500']">{{ tab }}</button>
+        <div class="flex justify-around bg-slate-900 border-b border-slate-800 sticky top-[152px] z-30 shadow-md">
+            <button v-for="tab in ['Gym', 'Diet', 'Fasting']" :key="tab" 
+                    @click="activeTab = tab; settingsOpen = false;" 
+                    :class="['p-3 text-xs font-black uppercase tracking-widest transition-all w-full', activeTab === tab ? 'tab-active' : 'text-slate-500']">
+                {{ tab }}
+            </button>
         </div>
 
         <div v-if="activeTab === 'Gym'" class="p-4 animate-in">
             <div class="flex overflow-x-auto gap-2 mb-4 no-scrollbar">
-                <button v-for="(day, index) in days" :key="index" @click="currentDayIndex = index; expandedExerciseIndex = null" :class="['px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transición-colors flex-1 text-center', currentDayIndex === index ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400']">{{ day.label }}</button>
+                <button v-for="(day, index) in days" :key="index" @click="currentDayIndex = index"
+                    :class="['px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors flex-1 text-center', currentDayIndex === index ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400']">
+                    {{ day.label }}
+                </button>
             </div>
             
             <div class="mb-4 bg-slate-800 border border-slate-700 rounded-lg p-3">
@@ -90,113 +127,385 @@
             </div>
 
             <div class="space-y-4">
-                <div v-for="(ex, i) in currentDayExercises" :key="i" class="card overflow-hidden" :class="[ex.completed ? 'border-green-500 bg-slate-800/50' : 'border-slate-700', expandedExerciseIndex === i ? 'bg-slate-700/50' : '']">
-                    
-                    <div class="p-4 flex gap-4" @click="toggleExercise(i)">
-                        <input type="checkbox" v-model="ex.completed" class="custom-checkbox mt-1" @click.stop>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-start mb-1">
-                                <span class="text-[9px] text-blue-400 font-bold uppercase tracking-widest bg-blue-900/30 px-2 py-0.5 rounded">{{ ex.muscle }}</span>
-                                <span class="text-xs font-bold text-orange-400"><i class="fas fa-fire mr-1"></i>{{ calculateBurn(ex) }}</span>
-                            </div>
-                            <h3 class="font-bold text-sm text-slate-100" :class="ex.completed ? 'line-through opacity-50' : ''">{{ ex.name }}</h3>
-                            <div class="text-[10px] text-slate-400 mt-1">{{ ex.sets }} ΣΕΤ | {{ ex.reps }}</div>
-                        </div>
-                        <div class="flex flex-col gap-2 items-center justify-center text-slate-500">
-                            <i class="fas" :class="expandedExerciseIndex === i ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                            <a :href="'https://www.youtube.com/results?search_query=' + ex.searchQuery" target="_blank" class="text-red-500" @click.stop><i class="fab fa-youtube text-xl"></i></a>
-                        </div>
-                    </div>
-
-                    <div v-if="expandedExerciseIndex === i" class="p-4 border-t border-slate-700 bg-slate-900/30 animate-fade-in">
-                        <div class="flex gap-4 items-center mb-4">
-                            <img :src="ex.sketchBase64" alt="Exercise Sketch" class="exercise-sketch">
-                            <div class="flex-1 space-y-2">
-                                <label class="text-[10px] text-slate-400 block">ΚΑΤΑΓΡΑΦΗ ΚΙΛΩΝ (kg)</label>
-                                <div class="flex items-center border-b border-slate-500 focus-within:border-blue-400 transition-colors bg-slate-800 rounded p-1">
-                                    <input type="number" v-model="ex.liftedWeight" placeholder="0" class="w-full bg-transparent text-center font-bold text-xl text-white outline-none">
-                                    <span class="text-xs text-slate-400 pr-2">kg</span>
+                <div v-for="(ex, i) in currentDayExercises" :key="i" class="card overflow-hidden transition-all" :class="ex.completed ? 'border-green-500 bg-slate-800/50' : 'border-slate-700'">
+                    <div class="p-4">
+                        <div class="flex gap-4">
+                            <input type="checkbox" v-model="ex.completed" class="custom-checkbox mt-1">
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="text-[9px] text-blue-400 font-bold uppercase tracking-widest bg-blue-900/30 px-2 py-0.5 rounded">{{ ex.muscle }}</span>
+                                    <span class="text-xs font-bold text-orange-400"><i class="fas fa-fire mr-1"></i>{{ calculateBurn(ex) }}</span>
+                                </div>
+                                <h3 class="font-bold text-sm text-slate-100" :class="ex.completed ? 'line-through opacity-50' : ''">{{ ex.name }}</h3>
+                                <div class="flex items-center gap-4 mt-3">
+                                    <span class="text-[10px] bg-slate-700 px-2 py-1 rounded text-white font-bold">{{ ex.sets }} ΣΕΤ | {{ ex.reps }}</span>
+                                    <div class="flex items-center border-b border-slate-500 focus-within:border-blue-400 transition-colors">
+                                        <input type="number" v-model="ex.liftedWeight" placeholder="0" class="w-10 bg-transparent text-center font-bold text-sm text-white outline-none">
+                                        <span class="text-[10px] text-slate-400 ml-1 pb-1">kg</span>
+                                    </div>
                                 </div>
                             </div>
+                            <div class="flex flex-col gap-3 items-center">
+                                <a :href="'https://www.youtube.com/results?search_query=' + ex.searchQuery" target="_blank" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fab fa-youtube text-xl"></i></a>
+                                <button @click="musicModalOpen = true" class="text-slate-400 hover:text-blue-400 transition-colors"><i class="fas fa-headphones text-lg"></i></button>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-px bg-slate-700">
-                            <button @click="startTimer(45, 'Rest')" class="p-2 text-xs font-bold bg-slate-800 text-slate-300 transition-colors">45" Rest</button>
-                            <button @click="startTimer(90, 'Next')" class="p-2 text-xs font-bold bg-slate-800 text-slate-300 transition-colors">90" Next</button>
-                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-px bg-slate-700 border-t border-slate-700">
+                        <button @click="startTimer(45, 'Διάλειμμα Σετ')" class="p-2 text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-blue-400 flex justify-center items-center gap-2 transition-colors">
+                            <i class="fas fa-stopwatch"></i> 45" Rest
+                        </button>
+                        <button @click="startTimer(90, 'Αλλαγή Άσκησης')" class="p-2 text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-green-400 flex justify-center items-center gap-2 transition-colors">
+                            <i class="fas fa-walking"></i> 90" Next
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card p-4 border-l-4 border-purple-500 bg-purple-900/10 mt-6">
+                    <h4 class="text-xs font-bold text-purple-400 uppercase mb-2"><i class="fas fa-leaf mr-2"></i>Αποθεραπεία & Zplast</h4>
+                    <p class="text-[11px] text-slate-300 font-medium">{{ days[currentDayIndex].stretching }}</p>
+                    <div class="mt-3 bg-slate-900/50 p-2 rounded border border-purple-500/20">
+                        <p class="text-[10px] text-slate-400 leading-relaxed italic">
+                            Εφαρμογή Zplast Total Repair Cream (Centella Asiatica, Μέλι, Υαλουρονικό, Μαστίχα Χίου, Αβοκάντο, Ιπποφαές) στις περιοχές καταπόνησης.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
 
+        <div v-if="activeTab === 'Diet'" class="p-4 space-y-4">
+            <div class="card p-4 bg-orange-500/5 border-orange-500/20 relative">
+                <h3 class="text-sm font-bold text-orange-400 mb-4 flex items-center gap-2"><i class="fas fa-utensils"></i> Καταγραφή Γεύματος</h3>
+                <div class="space-y-3">
+                    <div class="relative">
+                        <input v-model="searchQuery" @focus="showSuggestions = true" placeholder="Αναζήτηση τροφίμου..." class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-sm text-white outline-none focus:border-orange-500">
+                        <div v-if="showSuggestions && filteredFoods.length > 0" class="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl max-h-48 overflow-y-auto">
+                            <div v-for="food in filteredFoods" :key="food.name" @click="selectFood(food)" class="p-3 text-sm border-b border-slate-700 hover:bg-slate-700 cursor-pointer flex justify-between items-center">
+                                <span class="font-bold text-slate-200">{{ food.name }}</span>
+                                <span class="text-[10px] text-slate-400 bg-slate-900 px-2 py-1 rounded">{{ food.cals }}kcal/100g</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="selectedFoodItem" class="bg-slate-800 p-3 rounded-lg flex gap-3 items-center border border-slate-600">
+                        <div class="flex-1 text-xs font-bold text-blue-300">{{ selectedFoodItem.name }}</div>
+                        <div class="w-24">
+                            <input type="number" v-model.number="foodGrams" @input="calculateFromGrams" placeholder="g" class="w-full bg-slate-900 border border-slate-500 p-2 rounded text-center text-sm font-bold text-white outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input v-model.number="newMeal.cals" type="number" placeholder="Kcal" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-lg text-sm text-orange-400 font-bold outline-none">
+                        <input v-model.number="newMeal.protein" type="number" placeholder="Protein (g)" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-lg text-sm text-blue-400 font-bold outline-none">
+                    </div>
+                    <button @click="addMeal" class="w-full bg-orange-600 hover:bg-orange-500 py-3 rounded-lg font-black text-xs uppercase tracking-widest text-white transition-colors mt-2">ΠΡΟΣΘΗΚΗ</button>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <div v-for="(m, i) in meals" :key="i" class="card p-3 flex justify-between items-center text-xs border-slate-700">
+                    <div>
+                        <div class="font-bold text-slate-200 text-sm">{{ m.name }}</div>
+                        <div class="opacity-50 mt-0.5">{{ m.time }}</div>
+                    </div>
+                    <div class="text-right flex items-center gap-4">
+                        <div>
+                            <div class="text-orange-400 font-black text-sm">{{ m.cals }} kcal</div>
+                            <div class="text-blue-400 font-bold">{{ m.protein }}g protein</div>
+                        </div>
+                        <button @click="removeMeal(i)" class="text-slate-500 hover:text-red-500 p-2"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div v-if="activeTab === 'Fasting'" class="p-4 space-y-4">
+            <div class="card p-6 text-center">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-blue-400 mb-4">Ενυδάτωση (8 Ποτήρια)</h3>
+                <div class="flex justify-center gap-3 flex-wrap">
+                    <div v-for="n in 8" :key="n" @click="waterGlasses = n; saveData()" 
+                        :class="['w-10 h-10 rounded-full flex items-center justify-center border-2 cursor-pointer transition-all', waterGlasses >= n ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'border-slate-700 text-slate-600']">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                </div>
+                <button @click="waterGlasses = 0; saveData()" class="mt-4 text-[10px] text-slate-500 underline">Reset Water</button>
+            </div>
+            
+            <div class="card p-6 border-purple-500/20">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-purple-400 mb-4 text-center">Νηστεία 16:8</h3>
+                <div v-if="!isFasting" class="space-y-4 text-center">
+                    <input type="time" v-model="lastMealTimeInput" class="bg-slate-900 border border-slate-700 p-3 rounded-xl text-xl font-black text-white outline-none">
+                    <button @click="startFasting" class="w-full bg-purple-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-lg">Εναρξη Νηστειας</button>
+                </div>
+                <div v-else class="text-center space-y-4">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-widest">Απομενει</div>
+                    <div class="text-6xl font-black text-purple-400 tracking-tighter">{{ fastingTimeLeft }}</div>
+                    <div class="text-xs font-bold text-green-400">Λήξη: {{ fastingEndTimeLabel }}</div>
+                    <button @click="isFasting = false; fastStartTime = null; saveData();" class="text-red-400 text-[10px] uppercase font-bold px-4 py-2 rounded-full border border-red-400/30">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="timerActive" class="fixed inset-0 bg-slate-950/95 z-[100] flex flex-col items-center justify-center text-white backdrop-blur-md">
+            <div class="text-2xl font-bold text-blue-400 mb-6 uppercase tracking-widest">{{ timerLabel }}</div>
+            <div class="text-9xl font-black font-mono tracking-tighter mb-12">{{ timeLeft }}</div>
+            <div class="flex flex-col gap-4 w-64">
+                <button @click="timeLeft += 10" class="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-sm tracking-widest uppercase border border-slate-600 transition-colors">+10s</button>
+                <button @click="stopTimer" class="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-black text-lg tracking-widest uppercase transition-all">STOP</button>
+            </div>
+        </div>
+
+        <div class="fixed bottom-6 left-0 right-0 px-6 z-40">
+            <button @click="syncToSheets" :disabled="isSyncing" 
+                class="w-full py-4 bg-green-600 hover:bg-green-500 text-white rounded-2xl shadow-2xl font-black text-sm uppercase tracking-widest flex justify-center items-center gap-3 active:scale-95 transition-all disabled:bg-slate-700">
+                <div v-if="isSyncing" class="loader"></div>
+                <span>{{ isSyncing ? 'Syncing...' : 'Sync Data στο Sheet' }}</span>
+            </button>
+        </div>
+
+        <div v-if="musicModalOpen" class="fixed inset-0 bg-slate-950/90 z-[100] flex items-center justify-center p-4" @click.self="musicModalOpen = false">
+            <div class="card w-full max-w-sm overflow-hidden border-slate-600">
+                <div class="p-4 bg-blue-600 font-black flex justify-between items-center text-white text-xs uppercase tracking-widest">
+                    <span>Playlists & Podcasts</span>
+                    <button @click="musicModalOpen = false"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-5 space-y-4 overflow-y-auto max-h-[60vh]">
+                    <h4 class="text-[10px] text-slate-400 font-bold uppercase mb-2">Podcasts 🎙️</h4>
+                    <a href="https://podlist.gr/podcasts?category=politics&order_by=created_at" target="_blank" class="block p-3 bg-slate-900 border border-slate-700 rounded-lg text-sm font-bold text-orange-400">Podlist.gr</a>
+                    <a href="https://www.kathimerini.gr/visual/podcasts/" target="_blank" class="block p-3 bg-slate-900 border border-slate-700 rounded-lg text-sm font-bold text-blue-400">Η Καθημερινή</a>
+                    <a href="https://music.youtube.com/playlist?list=PLQRCbhtLyPgAZ6ZjwHcBOuzZs2u2dlKXV" target="_blank" class="block p-3 bg-slate-900 border border-slate-700 rounded-lg text-sm font-bold text-slate-300">LIFO Podcast</a>
+                    <h4 class="text-[10px] text-slate-400 font-bold uppercase mb-2 mt-4">Music 🎧</h4>
+                    <a href="https://music.youtube.com/playlist?list=PLiNpayiErByFtj94cAUMX3nku5gH9qbFt" target="_blank" class="block p-3 bg-slate-900 border border-slate-700 rounded-lg text-sm font-bold text-indigo-400">House Energy</a>
+                    <a href="https://music.youtube.com/watch?v=-k_LwBgZQQ0" target="_blank" class="block p-3 bg-slate-900 border border-slate-700 rounded-lg text-sm font-bold text-purple-400">Deep Disco</a>
+                    <a href="https://music.youtube.com/playlist?list=OLAK5uy_m8fhG_6nAqlzE4fQFTJrYUkJDOuR4M-Jk" target="_blank" class="block p-3 bg-slate-900 border border-slate-700 rounded-lg text-sm font-bold text-green-400">Musica Italiana</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     <script>
         const { createApp } = Vue
 
-        // PRE-CONFIGURED IDs FOR GOOGLE SHEETS
         const CONFIG = {
             FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLScnahaQL9EB9DZxbJ-hOYvTN0amQwdrYBKoHmjSZqws_sOPxg/formResponse',
-            ID_WORKOUT: 'entry.1984241690', ID_WEIGHT: 'entry.1038258713', ID_BURNED_CALS: 'entry.1382158247',
-            ID_BMI: 'entry.XXXXXX', ID_FOOD_CALS: 'entry.YYYYYY', ID_PROTEIN: 'entry.ZZZZZZ'
+            ID_WORKOUT: 'entry.1984241690',
+            ID_WEIGHT: 'entry.1038258713',
+            ID_BURNED_CALS: 'entry.1382158247',
+            ID_BMI: 'entry.XXXXXX',
+            ID_FOOD_CALS: 'entry.YYYYYY',
+            ID_PROTEIN: 'entry.ZZZZZZ'
         };
 
-        // Standard placeholders for sketches (for initial exercises)
-        const SKETCHES = {
-            bench_press: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZjE3MmEiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTMwLDcwIEw3MCw3MCBNNTAsNzAgTDUwLDUwIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSI0MCIgcj0iMTAiLz48cGF0aCBkPSJNMzAsMzAgTDcwLDMwIE01MCwzMCBMNTAsMjAiLz48L2c+PC9zdmc+',
-            squat: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZjE3MmEiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTUwLDIwIEw1MCw0MCBNNDAsNTAgTDUwLDQwIEw2MCw1MCBNNTAsNzAgTDUwLDkwIE00MCw5MCBMNjAsOTAiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjIwIiByPSIxMCIvPjwvZz48L3N2Zz+',
-            cardio: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwZjE3MmEiIHN0cm9rZS13aWR0aD0iMiI+PHBhdGggZD0iTTIwLDgwIEw4MCw4MCBNMjAsNjAgTDgwLDYwIE01MCw4MCBMNTAsNjAiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQwIiByPSIxMCIvPjxwYXRoIGQ9Ik01MCwzMCBMNDAsMzAgTDQwLDUwIE01MCwzMCBMNjAsMzAgTDYwLDUwIi8+PC9nPjwvc3ZnPg=='
-        };
+        const FOOD_DATABASE = [
+            { name: 'Στήθος Κοτόπουλο (Ψητό)', cals: 165, protein: 31 },
+            { name: 'Ρύζι Λευκό (Βρασμένο)', cals: 130, protein: 2.7 },
+            { name: 'Ρύζι Καστανό (Βρασμένο)', cals: 112, protein: 2.3 },
+            { name: 'Αυγό Βραστό', cals: 155, protein: 13 },
+            { name: 'Ασπράδια Αυγού', cals: 52, protein: 11 },
+            { name: 'Βρώμη', cals: 389, protein: 16.9 },
+            { name: 'Μοσχάρι Άπαχο (Ψητό)', cals: 250, protein: 26 },
+            { name: 'Μακαρόνια Λευκά (Βρασμένα)', cals: 158, protein: 5.8 },
+            { name: 'Μακαρόνια Ολικής (Βρασμένα)', cals: 124, protein: 5.3 },
+            { name: 'Τόνος σε Νερό', cals: 116, protein: 26 },
+            { name: 'Γιαούρτι 2%', cals: 73, protein: 7 },
+            { name: 'Γάλα 1.5%', cals: 47, protein: 3.4 },
+            { name: 'Πατάτα Βραστή', cals: 87, protein: 1.9 },
+            { name: 'Ελαιόλαδο (1 κουταλιά)', cals: 119, protein: 0 },
+            { name: 'Μπανάνα', cals: 89, protein: 1.1 }
+        ];
 
         createApp({
             data() {
                 return {
-                    activeTab: 'Gym', currentDayIndex: 0, expandedExerciseIndex: null,
-                    userWeight: 80, userHeight: 180, userAge: 53, waterGlasses: 0,
-                    timerActive: false, timeLeft: 0, timerLabel: '', intervalId: null,
-                    isFasting: false, fastStartTime: null, fastingTimeLeft: '16:00:00', fastingEndTimeLabel: '--:--', lastMealTimeInput: '',
-                    meals: [], searchQuery: '', showSuggestions: false, selectedFoodItem: null, foodGrams: 100, newMeal: { name: '', cals: '', protein: '' },
-                    settingsOpen: false, musicModalOpen: false, isSyncing: false, audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
+                    activeTab: 'Gym',
+                    currentDayIndex: 0,
                     
+                    userWeight: 80,
+                    targetWeight: 75,
+                    userHeight: 180,
+                    userAge: 53,
+                    waterGlasses: 0,
+                    
+                    timerActive: false,
+                    timeLeft: 0,
+                    timerLabel: '',
+                    intervalId: null,
+                    
+                    isFasting: false,
+                    fastStartTime: null,
+                    fastingTimeLeft: '16:00:00',
+                    fastingEndTimeLabel: '--:--',
+                    lastMealTimeInput: '',
+                    
+                    meals: [],
+                    searchQuery: '',
+                    showSuggestions: false,
+                    foodDb: FOOD_DATABASE,
+                    selectedFoodItem: null,
+                    foodGrams: 100,
+                    newMeal: { name: '', cals: '', protein: '' },
+                    
+                    settingsOpen: false,
+                    musicModalOpen: false,
+                    isSyncing: false,
+                    audio: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
+                    
+                    // ΕΠΙΣΤΗΜΟΝΙΚΟ ΠΡΟΓΡΑΜΜΑ x2 ΣΥΧΝΟΤΗΤΑ
                     days: [
-                        { label: 'ΔΕΥΤΕΡΑ', title: 'Upper A: Στήθος, Πλάτη & Ώμοι (Sketches)', stretching: 'Διατάσεις Θώρακα & Πλάτης', exercises: [
-                            { muscle: 'Στήθος', name: 'Πιέσεις Πάγκου', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Bench Press Form', sketchBase64: SKETCHES.bench_press },
-                            { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλίας', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Seated Cable Row', sketchBase64: SKETCHES.bench_press },
-                            { muscle: 'Ώμοι', name: 'Στρατιωτικές Πιέσεις', sets: 3, reps: '10', liftedWeight: '', type: 'strength', searchQuery: 'Overhead Press', sketchBase64: SKETCHES.bench_press },
-                            { muscle: 'Cardio', name: 'LISS - Ανηφόρα', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill', sketchBase64: SKETCHES.cardio }
+                        { label: 'ΔΕΥΤΕΡΑ', title: 'Upper A: Στήθος, Πλάτη & Ώμοι (Heavy)', stretching: 'Διατάσεις Θώρακα & Πλάτης', exercises: [
+                            { muscle: 'Στήθος', name: 'Πιέσεις Πάγκου (Μπάρα ή Αλτήρες)', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Bench Press Form' },
+                            { muscle: 'Πλάτη', name: 'Κωπηλατική Τροχαλίας (Wide Grip)', sets: 3, reps: '8-10', liftedWeight: '', type: 'strength', searchQuery: 'Seated Cable Row' },
+                            { muscle: 'Ώμοι', name: 'Στρατιωτικές Πιέσεις (Overhead)', sets: 3, reps: '10', liftedWeight: '', type: 'strength', searchQuery: 'Overhead Press' },
+                            { muscle: 'Πλάτη', name: 'Lat Pulldown (Κλειστή Λαβή)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Lat Pulldown Form' },
+                            { muscle: 'Στήθος', name: 'Pec Deck / Flyes', sets: 3, reps: '12-15', liftedWeight: '', type: 'strength', searchQuery: 'Pec Deck Flyes' },
+                            { muscle: 'Χέρια', name: 'Κάμψεις Δικεφάλων & Πιέσεις Τρικεφάλων', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Bicep and Tricep Workout' },
+                            { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }
                         ]},
-                        { label: 'ΤΡΙΤΗ', title: 'Lower A: Πόδια & Κορμός (Sketches)', stretching: 'Διατάσεις Τετρακέφαλων', exercises: [
-                            { muscle: 'Πόδια', name: 'Leg Press', sets: 4, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Press', sketchBase64: SKETCHES.squat },
-                            { muscle: 'Πόδια', name: 'RDLs', sets: 3, reps: '10', liftedWeight: '', type: 'strength', searchQuery: 'Romanian Deadlift', sketchBase64: SKETCHES.squat },
-                            { muscle: 'Κορμός', name: 'Σανίδα (Plank)', sets: 3, reps: '45"', liftedWeight: 0, type: 'iso', searchQuery: 'Plank Form', sketchBase64: SKETCHES.squat },
-                            { muscle: 'Cardio', name: 'LISS - Ποδήλατο', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Stationary Bike', sketchBase64: SKETCHES.cardio }
+                        { label: 'ΤΡΙΤΗ', title: 'Lower A: Πόδια & Κορμός (Quads Focus)', stretching: 'Διατάσεις Τετρακέφαλων & Λαγονοψοΐτη', exercises: [
+                            { muscle: 'Πόδια', name: 'Leg Press (Βασική)', sets: 4, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Press' },
+                            { muscle: 'Πόδια', name: 'Εκτάσεις Τετρακέφαλων', sets: 3, reps: '12-15', liftedWeight: '', type: 'strength', searchQuery: 'Leg Extension' },
+                            { muscle: 'Πόδια', name: 'Leg Curls (Μηχάνημα)', sets: 3, reps: '12-15', liftedWeight: '', type: 'strength', searchQuery: 'Seated Leg Curl' },
+                            { muscle: 'Γάμπες', name: 'Ακροστασίες (Calf Raises)', sets: 4, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Calf Raise Form' },
+                            { muscle: 'Κορμός', name: 'Σανίδα (Plank)', sets: 3, reps: '45"', liftedWeight: 0, type: 'iso', searchQuery: 'Plank Form' },
+                            { muscle: 'Κορμός', name: 'Άρσεις Ποδιών', sets: 3, reps: '15', liftedWeight: 0, type: 'iso', searchQuery: 'Leg Raises' },
+                            { muscle: 'Cardio', name: 'LISS - Ποδήλατο', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Stationary Bike' }
                         ]},
-                        { label: 'ΠΕΜΠΤΗ', title: 'Upper B: Ώμοι, Πλάτη & Χέρια (Sketches)', stretching: 'Διατάσεις Ώμων', exercises: [
-                            { muscle: 'Ώμοι', name: 'Πιέσεις (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Shoulder Press', sketchBase64: SKETCHES.bench_press },
-                            { muscle: 'Πλάτη', name: 'Lat Pulldown', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Lat Pulldown', sketchBase64: SKETCHES.bench_press },
-                            { muscle: 'Χέρια', name: 'Κάμψεις Δικεφάλων', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Bicep Curl', sketchBase64: SKETCHES.bench_press },
-                            { muscle: 'Cardio', name: 'LISS - Ανηφόρα', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill', sketchBase64: SKETCHES.cardio }
+                        { label: 'ΠΕΜΠΤΗ', title: 'Upper B: Ώμοι, Πλάτη & Στήθος (Hypertrophy)', stretching: 'Διατάσεις Ώμων & Χεριών', exercises: [
+                            { muscle: 'Ώμοι', name: 'Πιέσεις Ώμων (Αλτήρες)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Shoulder Press' },
+                            { muscle: 'Πλάτη', name: 'Έλξεις Τροχαλίας (Lat Pulldown)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Lat Pulldown' },
+                            { muscle: 'Στήθος', name: 'Πιέσεις σε Επικλινή Πάγκο', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Incline Bench Press' },
+                            { muscle: 'Πλάτη', name: 'Κωπηλατική (Αλτήρα ή Μηχάνημα)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'One Arm Row' },
+                            { muscle: 'Ώμοι', name: 'Πλάγιες Εκτάσεις (Lateral Raises)', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lateral Raise' },
+                            { muscle: 'Χέρια', name: 'Σφυριά (Δικέφαλοι) & Skullcrushers', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Arm Workout' },
+                            { muscle: 'Cardio', name: 'LISS - Περπάτημα Ανηφόρα', sets: 1, reps: '15', liftedWeight: 0, type: 'cardio', searchQuery: 'Incline Treadmill' }
                         ]},
-                        { label: 'ΠΑΡΑΣΚΕΥΗ', title: 'Lower B: Hamstrings & Cardio (Sketches)', stretching: 'Διατάσεις Μηριαίων', exercises: [
-                            { muscle: 'Πόδια', name: 'Προβολές (Lunges)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lunges', sketchBase64: SKETCHES.squat },
-                            { muscle: 'Πόδια', name: 'RDLs (Barbell)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Barbell RDL Form', sketchBase64: SKETCHES.squat },
-                            { muscle: 'Κορμός', name: 'Ροκανίσματα', sets: 4, reps: '20', liftedWeight: 0, type: 'iso', searchQuery: 'Ab Crunches', sketchBase64: SKETCHES.squat },
-                            { muscle: 'Cardio', name: 'Ελλειπτικό', sets: 1, reps: '30', liftedWeight: 0, type: 'cardio', searchQuery: 'LISS Cardio', sketchBase64: SKETCHES.cardio }
+                        { label: 'ΠΑΡΑΣΚΕΥΗ', title: 'Lower B: Πόδια & Cardio (Hamstrings Focus)', stretching: 'Πλήρες Πρόγραμμα Διατάσεων Ποδιών', exercises: [
+                            { muscle: 'Πόδια', name: 'Προβολές (Lunges)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Dumbbell Lunges' },
+                            { muscle: 'Πόδια', name: 'Άρσεις Θανάτου (RDLs)', sets: 3, reps: '10-12', liftedWeight: '', type: 'strength', searchQuery: 'Romanian Deadlift Form' },
+                            { muscle: 'Πόδια', name: 'Leg Press (High Stance)', sets: 3, reps: '12', liftedWeight: '', type: 'strength', searchQuery: 'Leg Press Hamstrings' },
+                            { muscle: 'Γάμπες', name: 'Ακροστασίες Καθιστός', sets: 3, reps: '15', liftedWeight: '', type: 'strength', searchQuery: 'Seated Calf Raise' },
+                            { muscle: 'Κορμός', name: 'Ροκανίσματα (Crunches)', sets: 4, reps: '20', liftedWeight: 0, type: 'iso', searchQuery: 'Ab Crunches' },
+                            { muscle: 'Cardio', name: 'Ελλειπτικό ή Γρήγορο Περπάτημα', sets: 1, reps: '30', liftedWeight: 0, type: 'cardio', searchQuery: 'LISS Cardio' }
                         ]}
                     ]
                 }
             },
             computed: {
-                calorieBalance() { return Math.round(( (10 * this.userWeight) + (6.25 * this.userHeight) - (5 * this.userAge) + 5 ) * 1.2 - 500) - this.meals.reduce((s, m) => s + m.cals, 0) + Math.round(this.days[this.currentDayIndex].exercises.filter(e => e.completed).reduce((s, e) => s + parseFloat( (e.type === 'cardio' ? (parseInt(e.reps || 15) * 7 * this.userWeight) / 200 : (this.userWeight * 0.05 * e.sets * 2.5) + ((parseFloat(e.liftedWeight) || 0) * 0.03 * e.sets)) )), 0)); },
-                totalEaten() { return this.meals.reduce((s, m) => s + m.cals, 0); }, totalProtein() { return this.meals.reduce((s, m) => s + (m.protein || 0), 0); }, proteinTarget() { return Math.round(this.userWeight * 2); }, totalBurnedSoFar() { return Math.round(this.days[this.currentDayIndex].exercises.filter(e => e.completed).reduce((s, e) => s + parseFloat( (e.type === 'cardio' ? (parseInt(e.reps || 15) * 7 * this.userWeight) / 200 : (this.userWeight * 0.05 * e.sets * 2.5) + ((parseFloat(e.liftedWeight) || 0) * 0.03 * e.sets)) )), 0)); }, currentDayExercises() { return this.days[this.currentDayIndex].exercises; }, calculatedBMI() { if(!this.userHeight || !this.userWeight) return 0; const h = this.userHeight / 100; return (this.userWeight / (h * h)).toFixed(1); }, bmiStatus() { const b = this.calculatedBMI; if(b < 18.5) return 'Λιποβαρής'; if(b < 25) return 'Κανονικό'; if(b < 30) return 'Υπέρβαρος'; return 'Παχύσαρκος'; }, bmiColorClass() { const b = this.calculatedBMI; if(b >= 18.5 && b < 25) return 'text-green-400'; if(b >= 25 && b < 30) return 'text-orange-400'; return 'text-red-400'; }
+                calculatedBMI() {
+                    if(!this.userHeight || !this.userWeight) return 0;
+                    const h = this.userHeight / 100;
+                    return (this.userWeight / (h * h)).toFixed(1);
+                },
+                calculatedTargetBMI() {
+                    if(!this.userHeight || !this.targetWeight) return 0;
+                    const h = this.userHeight / 100;
+                    return (this.targetWeight / (h * h)).toFixed(1);
+                },
+                bmiStatus() {
+                    const b = this.calculatedBMI;
+                    if(b < 18.5) return 'Λιποβαρής';
+                    if(b < 25) return 'Κανονικό';
+                    if(b < 30) return 'Υπέρβαρος';
+                    return 'Παχύσαρκος';
+                },
+                bmiColorClass() {
+                    const b = this.calculatedBMI;
+                    if(b >= 18.5 && b < 25) return 'text-green-400';
+                    if(b >= 25 && b < 30) return 'text-orange-400';
+                    return 'text-red-400';
+                },
+                calorieTarget() { 
+                    const bmr = (10 * this.userWeight) + (6.25 * this.userHeight) - (5 * this.userAge) + 5;
+                    return Math.round((bmr * 1.2) - 500); 
+                },
+                proteinTarget() { return Math.round(this.userWeight * 2); },
+                totalEaten() { return this.meals.reduce((s, m) => s + m.cals, 0); },
+                totalProtein() { return this.meals.reduce((s, m) => s + (m.protein || 0), 0); },
+                totalBurnedSoFar() { return Math.round(this.days[this.currentDayIndex].exercises.filter(e => e.completed).reduce((s, e) => s + parseFloat(this.calculateBurn(e)), 0)); },
+                calorieBalance() { return this.calorieTarget - this.totalEaten + this.totalBurnedSoFar; },
+                currentDayExercises() { return this.days[this.currentDayIndex].exercises; },
+                filteredFoods() {
+                    if (!this.searchQuery) return [];
+                    return this.foodDb.filter(f => f.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
+                }
             },
-            mounted() { /* LocalStorage & Time handling identical to image_0.png code */ },
+            mounted() {
+                const saved = JSON.parse(localStorage.getItem('workout_ultimate_x2_v2') || '{}');
+                if (saved.weight) this.userWeight = saved.weight;
+                if (saved.targetWeight) this.targetWeight = saved.targetWeight;
+                if (saved.height) this.userHeight = saved.height;
+                if (saved.age) this.userAge = saved.age;
+                if (saved.meals) this.meals = saved.meals;
+                if (saved.water) this.waterGlasses = saved.water;
+                if (saved.fastStartTime) {
+                    this.isFasting = true; this.fastStartTime = saved.fastStartTime;
+                    this.updateFastingTimer(); setInterval(this.updateFastingTimer, 1000);
+                }
+                const now = new Date();
+                this.lastMealTimeInput = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                
+                const d = now.getDay();
+                if(d === 1) this.currentDayIndex = 0; else if(d === 2) this.currentDayIndex = 1;
+                else if(d === 4) this.currentDayIndex = 2; else if(d === 5) this.currentDayIndex = 3;
+                else this.currentDayIndex = 0;
+
+                document.addEventListener('click', (e) => { if (!e.target.closest('.relative')) this.showSuggestions = false; });
+            },
             methods: {
-                saveData() { localStorage.setItem('workout_ultimate_x2_v1', JSON.stringify({ weight: this.userWeight, height: this.userHeight, age: this.userAge, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
-                toggleExercise(index) { if (this.expandedExerciseIndex === index) { this.expandedExerciseIndex = null; } else { this.expandedExerciseIndex = index; } },
-                startTimer(s, l) { this.timerLabel = l; this.timeLeft = s; this.timerActive = true; if (this.intervalId) clearInterval(this.intervalId); this.intervalId = setInterval(() => { this.timeLeft--; if (this.timeLeft <= 0) { this.audio.play().catch(e=>{}); this.stopTimer(); } }, 1000); },
+                saveData() { localStorage.setItem('workout_ultimate_x2_v2', JSON.stringify({ weight: this.userWeight, targetWeight: this.targetWeight, height: this.userHeight, age: this.userAge, meals: this.meals, water: this.waterGlasses, fastStartTime: this.fastStartTime })); },
+                startTimer(s, l) {
+                    this.timerLabel = l; this.timeLeft = s; this.timerActive = true;
+                    if (this.intervalId) clearInterval(this.intervalId);
+                    this.intervalId = setInterval(() => { this.timeLeft--; if (this.timeLeft <= 0) { this.audio.play().catch(e=>{}); this.stopTimer(); } }, 1000);
+                },
                 stopTimer() { clearInterval(this.intervalId); this.timerActive = false; },
-                calculateBurn(ex) { let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets || 3; if (ex.type === 'cardio') b = (parseInt(ex.reps || 15) * 7 * w) / 200; else if (ex.type === 'strength') b = (w * 0.05 * s * 2.5) + (l * 0.03 * s); else b = (w * 0.04 * s * 1.5); return b.toFixed(0); },
-                async syncToSheets() { /* Sheets sync identical to image_0.png code */ }
+                selectFood(f) { this.selectedFoodItem = f; this.searchQuery = f.name; this.showSuggestions = false; this.newMeal.name = f.name; this.foodGrams = 100; this.calculateFromGrams(); },
+                calculateFromGrams() { if (!this.selectedFoodItem) return; const factor = this.foodGrams / 100; this.newMeal.cals = Math.round(this.selectedFoodItem.cals * factor); this.newMeal.protein = Math.round(this.selectedFoodItem.protein * factor * 10) / 10; },
+                addMeal() { 
+                    if(!this.newMeal.name && this.searchQuery) this.newMeal.name = this.searchQuery;
+                    if(this.newMeal.name && this.newMeal.cals) { 
+                        let fullName = this.selectedFoodItem ? `${this.newMeal.name} (${this.foodGrams}g)` : this.newMeal.name;
+                        this.meals.unshift({ name: fullName, cals: this.newMeal.cals, protein: this.newMeal.protein || 0, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }); 
+                        this.newMeal = {name:'', cals:'', protein:''}; this.searchQuery = ''; this.selectedFoodItem = null; this.saveData(); 
+                    }
+                },
+                removeMeal(i) { this.meals.splice(i, 1); this.saveData(); },
+                calculateBurn(ex) {
+                    let b = 0, w = this.userWeight, l = parseFloat(ex.liftedWeight) || 0, s = ex.sets || 3;
+                    if (ex.type === 'cardio') b = (parseInt(ex.reps || 15) * 7 * w) / 200;
+                    else if (ex.type === 'strength') b = (w * 0.05 * s * 2.5) + (l * 0.03 * s);
+                    else b = (w * 0.04 * s * 1.5);
+                    return b.toFixed(0);
+                },
+                startFasting() {
+                    const [h, m] = this.lastMealTimeInput.split(':');
+                    const start = new Date(); start.setHours(h, m, 0); if (start > new Date()) start.setDate(start.getDate() - 1);
+                    this.fastStartTime = start.getTime(); this.isFasting = true; this.saveData();
+                    this.updateFastingTimer(); setInterval(this.updateFastingTimer, 1000);
+                },
+                updateFastingTimer() {
+                    if (!this.fastStartTime) return;
+                    const diff = (this.fastStartTime + 57600000) - new Date().getTime();
+                    const end = new Date(this.fastStartTime + 57600000);
+                    this.fastingEndTimeLabel = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+                    if (diff <= 0) this.fastingTimeLeft = "DONE";
+                    else {
+                        const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000); const s = Math.floor((diff % 60000) / 1000);
+                        this.fastingTimeLeft = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                    }
+                },
+                async syncToSheets() {
+                    this.isSyncing = true;
+                    const fd = new FormData();
+                    fd.append(CONFIG.ID_WORKOUT, this.days[this.currentDayIndex].title);
+                    fd.append(CONFIG.ID_WEIGHT, this.userWeight);
+                    fd.append(CONFIG.ID_BURNED_CALS, this.totalBurnedSoFar);
+                    if (!CONFIG.ID_BMI.includes('XXXX')) fd.append(CONFIG.ID_BMI, this.calculatedBMI);
+                    if (!CONFIG.ID_FOOD_CALS.includes('YYYY')) fd.append(CONFIG.ID_FOOD_CALS, this.totalEaten);
+                    if (!CONFIG.ID_PROTEIN.includes('ZZZZ')) fd.append(CONFIG.ID_PROTEIN, this.totalProtein);
+                    try { await fetch(CONFIG.FORM_URL, { method: 'POST', mode: 'no-cors', body: fd }); alert('✅ Η ημέρα συγχρονίστηκε στο Sheet!'); } catch (e) { alert('❌ Σφάλμα Σύνδεσης'); }
+                    finally { this.isSyncing = false; }
+                }
             }
         }).mount('#app')
     </script>
